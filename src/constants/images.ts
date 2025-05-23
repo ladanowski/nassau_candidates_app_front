@@ -1,3 +1,12 @@
+import BellIcon from '../../assets/svgs/bell.svg';
+import BannerHeader from '../../assets/images/bannerHeader.png';
+
+
 export const images = {
-  bannerHeader: require("../../assets/images/bannerHeader.png"),
+  bannerHeader: BannerHeader,
 };
+
+export const svgs = {
+  bellIcon: BellIcon,
+};
+

@@ -1,17 +1,39 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import BannerHeader from '../../components/BannerHeader';
 import { Colors } from '../../constants/colors';
+// import BellIcon from '../../../assets/svgs/bell.svg';
+import { svgs } from '../../constants/images';
 
 const DashboardScreen: React.FC = () => {
   return (
-    <SafeAreaView style={{flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.light.background,}}>
+    <SafeAreaView style={{
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: Colors.light.background,
+    }}>
       <BannerHeader />
       <View style={styles.container}>
-        <Text style={styles.text}>Dashboard</Text>
+        <View style={{ width: '100%', alignItems: 'center', backgroundColor: '#F2F2F2', padding: 8, flexDirection: 'row', justifyContent: 'center', }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', fontStyle: 'italic', color: '#C30017', }}>— A Public Office is a Public Trust —</Text>
+          <TouchableOpacity onPress={() => console.log('Bell icon pressed')}>
+            <View style={{
+              marginLeft: 16,
+              // width: 24,
+              // height: 24,
+              borderRadius: 50,
+              padding: 6,
+              backgroundColor: Colors.light.primary,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+              <svgs.bellIcon width={18} height={18}/>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+
       </View>
     </SafeAreaView>
   );
@@ -23,6 +45,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    width: '100%',
   },
   text: {
     fontSize: 28,

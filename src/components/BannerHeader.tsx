@@ -8,8 +8,7 @@ const BannerHeader: React.FC = () => {
     <View style={styles.container}>
       <ImageBackground
       style={{ width: '100%', height: 120 }}
-      resizeMode="contain"
-        source={images.bannerHeader}
+      resizeMode="stretch" source={images.bannerHeader}
       />
     </View>
   );
