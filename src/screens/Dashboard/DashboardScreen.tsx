@@ -7,18 +7,18 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 import Footer from '../../components/Footer';
 
 const gridItems = [
-  { key: 'Announced Candidates', icon: svgs.settings, url: 'https://www.facebook.com/votenassaufl/', label: 'Announced Candidates' },
-  { key: 'Canvassing Board Schedule', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Canvassing Board Schedule' },
-  { key: 'Contact Us', icon: svgs.settings, url: 'https://twitter.com/votenassaufl/', label: 'Contact Us' },
-  { key: 'Election Countdown', icon: svgs.settings, url: 'https://www.facebook.com/votenassaufl/', label: 'Election Countdown' },
-  { key: 'Offices up for Election', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Offices up for Election' },
-  { key: 'Petition Queue', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Petition Queue' },
-  { key: 'Polling Locations & 150’ Sign Restrictions', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Polling Locations & 150’ Sign Restrictions' },
-  { key: 'Request Vote-by-Mail data', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Request Vote-by-Mail data' },
-  { key: 'Settings', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Settings' },
-  { key: 'Campaign Finance', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Campaign Finance' },
-  { key: 'Notifications', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Notifications' },
-  { key: 'Schedule Appointment', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Schedule Appointment' },
+  { key: 'Announced Candidates', icon: svgs.settings, url: 'https://www.votenassaufl.gov/announced-candidates-and-committees', label: 'Announced Candidates' },
+  { key: 'Canvassing Board Schedule', icon: svgs.settings, url: 'https://www.votenassaufl.gov/canvassing-board', label: 'Canvassing Board Schedule' },
+  { key: 'Contact Us', icon: svgs.settings, url: 'https://www.votenassaufl.gov/contact', label: 'Contact Us' },
+  { key: 'Election Countdown', icon: svgs.settings, url: 'https://www.votenassaufl.gov/upcoming-elections', label: 'Election Countdown' },
+  { key: 'Offices up for Election', icon: svgs.settings, url: 'https://www.votenassaufl.gov/offices-up-for-election', label: 'Offices up for Election' },
+  { key: 'Petition Queue', icon: svgs.settings, url: null, label: 'Petition Queue' },
+  { key: 'Polling Locations & 150’ Sign Restrictions', icon: svgs.settings, url: 'https://www.votenassaufl.gov/150-ft-no-solicitation-zones', label: 'Polling Locations & 150’ Sign Restrictions' },
+  { key: 'Request Vote-by-Mail data', icon: svgs.settings, url: 'https://www.votenassaufl.gov/vote-by-mail-data', label: 'Request Vote-by-Mail data' },
+  { key: 'Settings', icon: svgs.settings, url: null, label: 'Settings' },
+  { key: 'Campaign Finance', icon: svgs.settings, url: 'https://www.votenassaufl.gov/campaign-finance-reports', label: 'Campaign Finance' },
+  { key: 'Notifications', icon: svgs.settings, url: null, routeTo: 'notifications', label: 'Notifications' },
+  { key: 'Schedule Appointment', icon: svgs.settings, url: 'https://calendly.com/ncsoe/60min?month=2025-02', label: 'Schedule Appointment' },
 
 ];
 
@@ -26,8 +26,14 @@ const DashboardScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<any>>();
 
   const renderGridItem = ({ item }: any) => (
-    <TouchableOpacity style={styles.gridItem} activeOpacity={0.7}>
-      {/* Replace with your icon */}
+    <TouchableOpacity style={styles.gridItem} activeOpacity={0.7} onPress={() => {
+      if (item.url) {
+        Linking.openURL(item.url).catch(err => console.error("Failed to open URL:", err));
+      } else {
+        if (item.routeTo) {
+          navigation.navigate(item.routeTo);
+        }
+      }}}>
       <View style={styles.iconCircle}>
         <item.icon width={40} height={40} />
       </View>
@@ -117,10 +123,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.primary,
   },
   gridLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#fff',
     fontFamily: 'MyriadPro-Bold',
     textAlign: 'center',
     marginTop: 8,
+    lineHeight: 14,
   },
 });
