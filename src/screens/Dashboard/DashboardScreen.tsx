@@ -4,8 +4,11 @@ import BannerHeader from '../../components/BannerHeader';
 import { Colors } from '../../constants/colors';
 // import BellIcon from '../../../assets/svgs/bell.svg';
 import { svgs } from '../../constants/images';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 
 const DashboardScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp<any>>();
+  
   return (
     <SafeAreaView style={{
       flex: 1,
@@ -17,7 +20,7 @@ const DashboardScreen: React.FC = () => {
       <View style={styles.container}>
         <View style={{ width: '100%', alignItems: 'center', backgroundColor: '#F2F2F2', padding: 8, flexDirection: 'row', justifyContent: 'center', }}>
           <Text style={{ fontSize: 16, fontWeight: 'bold', fontStyle: 'italic', color: '#C30017', }}>— A Public Office is a Public Trust —</Text>
-          <TouchableOpacity onPress={() => console.log('Bell icon pressed')}>
+          <TouchableOpacity onPress={() => navigation.navigate('notifications')}>
             <View style={{
               marginLeft: 16,
               // width: 24,
@@ -32,8 +35,8 @@ const DashboardScreen: React.FC = () => {
             </View>
           </TouchableOpacity>
         </View>
-
-
+        
+        
       </View>
     </SafeAreaView>
   );
