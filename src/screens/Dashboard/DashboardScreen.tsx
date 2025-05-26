@@ -4,6 +4,7 @@ import BannerHeader from '../../components/BannerHeader';
 import { Colors } from '../../constants/colors';
 import { svgs } from '../../constants/images';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
+import Footer from '../../components/Footer';
 
 const gridItems = [
   { key: 'Announced Candidates', icon: svgs.settings, url: 'https://www.facebook.com/votenassaufl/', label: 'Announced Candidates' },
@@ -19,12 +20,6 @@ const gridItems = [
   { key: 'Notifications', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Notifications' },
   { key: 'Schedule Appointment', icon: svgs.settings, url: 'https://www.instagram.com/votenassaufl/', label: 'Schedule Appointment' },
 
-];
-
-const socialIcons = [
-  { key: 'facebook', icon: svgs.facebook, url: 'https://www.facebook.com/votenassaufl/' },
-  { key: 'instagram', icon: svgs.instagram, url: 'https://www.instagram.com/votenassaufl/' },
-  { key: 'twitter', icon: svgs.twitter, url: 'https://twitter.com/votenassaufl/' },
 ];
 
 const DashboardScreen: React.FC = () => {
@@ -79,19 +74,7 @@ const DashboardScreen: React.FC = () => {
             contentContainerStyle={styles.gridList}
             columnWrapperStyle={styles.gridRow}
           />
-          {/* Follow us! @votenassaufl */}
-          <View style={styles.footer}>
-            <Text style={{ textAlign: 'center', fontSize: 16, color: Colors.light.primary, fontFamily: 'MyriadPro-Bold', marginBottom: 8 }}>
-              Follow us! @votenassaufl
-            </Text>
-            <View style={styles.socialIcons}>
-              {socialIcons.map(icon => (
-                <TouchableOpacity key={icon.key} style={styles.socialIcon} activeOpacity={0.7} onPress={() => Linking.openURL(icon.url)}>
-                  <icon.icon width={36} height={36} />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+        <Footer/>  
         </ScrollView>
 
       </View>
@@ -140,19 +123,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
   },
-  footer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 16,
-    backgroundColor: Colors.light.background,
-  },
-  socialIcons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  socialIcon: {
-    marginHorizontal: 12,
-  },
-
 });
