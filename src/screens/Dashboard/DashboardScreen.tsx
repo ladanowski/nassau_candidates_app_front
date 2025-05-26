@@ -5,6 +5,7 @@ import { Colors } from '../../constants/colors';
 import { svgs } from '../../constants/images';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import Footer from '../../components/Footer';
+import { globalStyles } from '../../styles/globalStyles';
 
 const gridItems = [
   { key: 'Announced Candidates', icon: svgs.settings, url: 'https://www.votenassaufl.gov/announced-candidates-and-committees', label: 'Announced Candidates' },
@@ -28,7 +29,11 @@ const DashboardScreen: React.FC = () => {
   const renderGridItem = ({ item }: any) => (
     <TouchableOpacity style={styles.gridItem} activeOpacity={0.7} onPress={() => {
       if (item.url) {
-        Linking.openURL(item.url).catch(err => console.error("Failed to open URL:", err));
+        // Linking.openURL(item.url).catch(err => console.error("Failed to open URL:", err));
+        navigation.navigate('webView', {
+          title: item.label,
+          link: item.url,
+        });
       } else {
         if (item.routeTo) {
           navigation.navigate(item.routeTo);
@@ -42,12 +47,7 @@ const DashboardScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={{
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: Colors.light.background,
-    }}>
+    <SafeAreaView style={globalStyles.safeAreaContainer}>
       <BannerHeader />
       <View style={styles.container}>
         <View style={{ width: '100%', alignItems: 'center', backgroundColor: '#F2F2F2', padding: 12, flexDirection: 'row', justifyContent: 'center', }}>

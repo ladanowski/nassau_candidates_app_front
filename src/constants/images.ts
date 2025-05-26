@@ -3,6 +3,7 @@ import Facebook from '../../assets/svgs/facebook.svg';
 import Instagram from '../../assets/svgs/instagram.svg';
 import Twitter from '../../assets/svgs/twitter.svg';
 import Settings from '../../assets/svgs/settings.svg';
+import Back from '../../assets/svgs/back.svg';
 import BannerHeader from '../../assets/images/bannerHeader.png';
 
 
@@ -16,5 +17,6 @@ export const svgs = {
   instagram: Instagram,
   twitter: Twitter,
   settings: Settings,
+  back: Back,
 };
 
