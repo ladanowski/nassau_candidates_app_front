@@ -11,7 +11,7 @@ const NotificationsScreen: React.FC = () => {
       backgroundColor: Colors.light.background,
     }}>
       <View>
-        <Text style={{ fontSize: 16, fontWeight: 'bold', fontStyle: 'italic', color: '#C30017', }}>Notifications Screen</Text>
+        <Text style={{ fontSize: 16, color: '#C30017', fontFamily: 'MyriadPro-Bold', fontStyle: 'italic', }}>Notifications Screen</Text>
       </View>
     </SafeAreaView>
   );
