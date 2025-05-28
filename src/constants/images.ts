@@ -12,6 +12,7 @@ import OptionSettings from '../../assets/svgs/option_settings.svg';
 import OptionAppointmentSchedule from '../../assets/svgs/option_schedule_appointment.svg';
 import OptionNotifications from '../../assets/svgs/option_notifications.svg';
 import TimerBackground from '../../assets/svgs/timer_background.svg';
+import NassauCountry from '../../assets/svgs/nassau_country.svg';
 import BannerHeader from '../../assets/images/bannerHeader.png';
 
 
@@ -34,5 +35,6 @@ export const svgs = {
   optionNotifications: OptionNotifications,
   optionAppointmentSchedule: OptionAppointmentSchedule,
   timerBackground: TimerBackground,
+  nassauCountry: NassauCountry,
 };
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, FlatList, Image, Linking } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, FlatList, Image, Linking, Dimensions } from 'react-native';
 import BannerHeader from '../../components/BannerHeader';
 import { Colors } from '../../constants/colors';
 import { svgs } from '../../constants/images';
@@ -71,15 +71,34 @@ const DashboardScreen: React.FC = () => {
 
         {/* Want a View that will be scrolable. It will have a Grid List of Icons 3 in a row. and total 13 items. and  then after grid list there will be a footer with three social icons. Both Grid and footer be in same Scroll view*/}
         <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors.light.primary, }}>
-          <FlatList
-            data={gridItems}
-            renderItem={renderGridItem}
-            keyExtractor={item => item.key}
-            numColumns={3}
-            scrollEnabled={false}
-            contentContainerStyle={styles.gridList}
-            columnWrapperStyle={styles.gridRow}
-          />
+          <View style={{ position: 'relative', width: '100%', flex: 1 }}>
+            <svgs.nassauCountry
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: '50%',
+                transform: [{ translateX: -0.5 * 0.9 * Dimensions.get('window').width }],
+                bottom: 0,
+                opacity: 0.45,
+                zIndex: 0,
+              }}
+              width="90%"
+              height="90%"
+              preserveAspectRatio="xMidYMid meet"
+            />
+
+            <FlatList
+              data={gridItems}
+              renderItem={renderGridItem}
+              keyExtractor={item => item.key}
+              numColumns={3}
+              scrollEnabled={false}
+              contentContainerStyle={styles.gridList}
+              columnWrapperStyle={styles.gridRow}
+              style={{ zIndex: 1 }} // Optional: to ensure it's above background
+            />
+          </View>
+
 
           <View style={{
             justifyContent: 'center', paddingTop: 14, backgroundColor: Colors.light.background,
@@ -87,7 +106,7 @@ const DashboardScreen: React.FC = () => {
             <Text style={{ textAlign: 'center', fontSize: 18, color: Colors.light.primary, fontFamily: 'MyriadPro-Bold', marginBottom: 8, textTransform: 'uppercase' }}>
               Countdown to 2026 Elections
             </Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start',  }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', }}>
               <CountdownTimer targetDate={new Date('2025-05-28T15:34:00')} label="Until Primary Election registration deadline" />
               <CountdownTimer targetDate={new Date('2025-05-28T17:30:00')} label="Until Primary Election" />
               <CountdownTimer targetDate={new Date('2025-05-28T15:36:00')} label="Until General Election" />
