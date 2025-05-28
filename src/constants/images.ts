@@ -11,6 +11,7 @@ import OptionRequestVoteByMail from '../../assets/svgs/option_request_vote_by_ma
 import OptionSettings from '../../assets/svgs/option_settings.svg';
 import OptionAppointmentSchedule from '../../assets/svgs/option_schedule_appointment.svg';
 import OptionNotifications from '../../assets/svgs/option_notifications.svg';
+import TimerBackground from '../../assets/svgs/timer_background.svg';
 import BannerHeader from '../../assets/images/bannerHeader.png';
 
 
@@ -32,5 +33,6 @@ export const svgs = {
   optionSettings: OptionSettings,
   optionNotifications: OptionNotifications,
   optionAppointmentSchedule: OptionAppointmentSchedule,
+  timerBackground: TimerBackground,
 };
 

@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   footer: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 10,
     backgroundColor: Colors.light.background,
   },
   socialIcons: {

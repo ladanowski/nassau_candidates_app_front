@@ -6,6 +6,7 @@ import { svgs } from '../../constants/images';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import Footer from '../../components/Footer';
 import { globalStyles } from '../../styles/globalStyles';
+import CountdownTimer from './CountdownTimer';
 
 const gridItems = [
   { key: 'Announced Candidates', icon: svgs.optionAnnouncedCandidate, url: 'https://www.votenassaufl.gov/announced-candidates-and-committees', label: 'Announced Candidates' },
@@ -38,7 +39,8 @@ const DashboardScreen: React.FC = () => {
         if (item.routeTo) {
           navigation.navigate(item.routeTo);
         }
-      }}}>
+      }
+    }}>
       <item.icon width={80} height={80} />
       <Text style={styles.gridLabel}>{item.label}</Text>
     </TouchableOpacity>
@@ -49,7 +51,7 @@ const DashboardScreen: React.FC = () => {
       <BannerHeader />
       <View style={styles.container}>
         <View style={{ width: '100%', alignItems: 'center', backgroundColor: '#F2F2F2', padding: 12, flexDirection: 'row', justifyContent: 'center', }}>
-          <Text style={{ fontSize: 16, color: '#C30017', fontFamily: 'MyriadPro-Bold', fontStyle: 'italic', }}>— A Public Office is a Public Trust —</Text>
+          <Text style={{ fontSize: 16, color: Colors.light.secondary, fontFamily: 'MyriadPro-Bold', fontStyle: 'italic', }}>— A Public Office is a Public Trust —</Text>
           {/* <TouchableOpacity onPress={() => navigation.navigate('notifications')}>
             <View style={{
               marginLeft: 16,
@@ -78,7 +80,20 @@ const DashboardScreen: React.FC = () => {
             contentContainerStyle={styles.gridList}
             columnWrapperStyle={styles.gridRow}
           />
-        <Footer/>  
+
+          <View style={{
+            justifyContent: 'center', paddingTop: 14, backgroundColor: Colors.light.background,
+          }}>
+            <Text style={{ textAlign: 'center', fontSize: 18, color: Colors.light.primary, fontFamily: 'MyriadPro-Bold', marginBottom: 8, textTransform: 'uppercase' }}>
+              Countdown to 2026 Elections
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start',  }}>
+              <CountdownTimer targetDate={new Date('2025-05-28T15:34:00')} label="Until Primary Election registration deadline" />
+              <CountdownTimer targetDate={new Date('2025-05-28T17:30:00')} label="Until Primary Election" />
+              <CountdownTimer targetDate={new Date('2025-05-28T15:36:00')} label="Until General Election" />
+            </View>
+          </View>
+          <Footer />
         </ScrollView>
 
       </View>
