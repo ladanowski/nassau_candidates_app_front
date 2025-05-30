@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, FlatList, Image, Linking, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, FlatList, Dimensions, ActivityIndicator } from 'react-native';
 import BannerHeader from '../../components/BannerHeader';
 import { Colors } from '../../constants/colors';
 import { svgs } from '../../constants/images';
@@ -7,6 +7,7 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 import Footer from '../../components/Footer';
 import { globalStyles } from '../../styles/globalStyles';
 import CountdownTimer from './CountdownTimer';
+import firestore from '@react-native-firebase/firestore';
 
 const gridItems = [
   { key: 'Announced Candidates', icon: svgs.optionAnnouncedCandidate, url: 'https://www.votenassaufl.gov/announced-candidates-and-committees', label: 'Announced Candidates' },
@@ -24,8 +25,46 @@ const gridItems = [
 
 ];
 
+type CountdownItem = {
+  id: string;
+  label: string;
+  date: Date;
+};
+
 const DashboardScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<any>>();
+
+  const [countdownData, setCountdownData] = useState<CountdownItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCountdownDates = async () => {
+      try {
+
+        const snapshot = await firestore().collection('dates').orderBy('order').get();
+
+        const fetchedData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            label: data.label,
+            date: data.date.toDate(),
+          };
+        });
+
+        console.log('Fetched countdown data:', fetchedData);
+        setCountdownData(fetchedData);
+
+      } catch (error) {
+        console.error('Failed to fetch countdowns from Firestore:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCountdownDates();
+  }, []);
+
 
   const renderGridItem = ({ item }: any) => (
     <TouchableOpacity style={styles.gridItem} activeOpacity={0.7} onPress={() => {
@@ -67,9 +106,6 @@ const DashboardScreen: React.FC = () => {
             </View>
           </TouchableOpacity> */}
         </View>
-
-
-        {/* Want a View that will be scrolable. It will have a Grid List of Icons 3 in a row. and total 13 items. and  then after grid list there will be a footer with three social icons. Both Grid and footer be in same Scroll view*/}
         <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors.light.primary, }}>
           <View style={{ position: 'relative', width: '100%', flex: 1 }}>
             <svgs.nassauCountry
@@ -100,18 +136,24 @@ const DashboardScreen: React.FC = () => {
           </View>
 
 
-          <View style={{
+          {loading ? (
+            <ActivityIndicator size="large" color={Colors.light.primary} style={{ backgroundColor: Colors.light.background, padding: 20 }} />
+          ) : countdownData.length > 0 && (<View style={{
             justifyContent: 'center', paddingTop: 14, backgroundColor: Colors.light.background,
           }}>
             <Text style={{ textAlign: 'center', fontSize: 18, color: Colors.light.primary, fontFamily: 'MyriadPro-Bold', marginBottom: 8, textTransform: 'uppercase' }}>
               Countdown to 2026 Elections
             </Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', }}>
-              <CountdownTimer targetDate={new Date('2025-05-28T15:34:00')} label="Until Primary Election registration deadline" />
-              <CountdownTimer targetDate={new Date('2025-05-28T17:30:00')} label="Until Primary Election" />
-              <CountdownTimer targetDate={new Date('2025-05-28T15:36:00')} label="Until General Election" />
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start' }}>
+              {countdownData.map(item => (
+                <CountdownTimer
+                  key={item.id}
+                  targetDate={item.date}
+                  label={item.label}
+                />
+              ))}
             </View>
-          </View>
+          </View>)}
           <Footer />
         </ScrollView>
 
@@ -130,8 +172,8 @@ const styles = StyleSheet.create({
   },
 
   gridList: {
-    paddingVertical: 24,
-    paddingHorizontal: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
   gridRow: {
     marginBottom: 24,

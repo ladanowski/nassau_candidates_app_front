@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "645095829554",
+    "project_id": "candidate-app-addinsolutions",
+    "storage_bucket": "candidate-app-addinsolutions.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:645095829554:android:0247d3b28c33ba68a80c2b",
+        "android_client_info": {
+          "package_name": "gov.votenassauflorida.candidate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjlwCUMZMCKtAeT5g8FwweagMzBLJiseg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
