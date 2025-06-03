@@ -11,15 +11,15 @@ import firestore from '@react-native-firebase/firestore';
 
 const gridItems = [
   { key: 'Announced Candidates', icon: svgs.optionAnnouncedCandidate, url: 'https://www.votenassaufl.gov/announced-candidates-and-committees', label: 'Announced Candidates' },
-  { key: 'Canvassing Board Schedule', icon: svgs.settings, url: 'https://www.votenassaufl.gov/canvassing-board', label: 'Canvassing Board Schedule' },
+  { key: 'Canvassing Board Schedule', icon: svgs.optionCanvassingBoard, url: 'https://www.votenassaufl.gov/canvassing-board', label: 'Canvassing Board Schedule' },
   { key: 'Contact Us', icon: svgs.optionContactUs, url: 'https://www.votenassaufl.gov/contact', label: 'Contact Us' },
-  { key: 'Election Countdown', icon: svgs.settings, url: 'https://www.votenassaufl.gov/upcoming-elections', label: 'Election Countdown' },
-  { key: 'Offices up for Election', icon: svgs.settings, url: 'https://www.votenassaufl.gov/offices-up-for-election', label: 'Offices up for Election' },
-  { key: 'Petition Queue', icon: svgs.settings, url: null, label: 'Petition Queue' },
+  { key: 'Election Countdown', icon: svgs.optionElectionCountdown, url: 'https://www.votenassaufl.gov/upcoming-elections', label: 'Election Countdown' },
+  { key: 'Offices up for Election', icon: svgs.optionOfficeUpForElection, url: 'https://www.votenassaufl.gov/offices-up-for-election', label: 'Offices up for Election' },
+  { key: 'Petition Queue', icon: svgs.optionPetitionQueue, url: null, label: 'Petition Queue' },
   { key: 'Polling Locations & 150’ Sign Restrictions', icon: svgs.optionPollingLocation, url: 'https://www.votenassaufl.gov/150-ft-no-solicitation-zones', label: 'Polling Locations & 150’ Sign Restrictions' },
   { key: 'Request Vote-by-Mail data', icon: svgs.optionRequestVoteByMail, url: 'https://www.votenassaufl.gov/vote-by-mail-data', label: 'Request Vote-by-Mail data' },
   { key: 'Settings', icon: svgs.optionSettings, url: null, label: 'Settings' },
-  { key: 'Campaign Finance', icon: svgs.settings, url: 'https://www.votenassaufl.gov/campaign-finance-reports', label: 'Campaign Finance' },
+  { key: 'Campaign Finance', icon: svgs.optionCampaignFinance, url: 'https://www.votenassaufl.gov/campaign-finance-reports', label: 'Campaign Finance' },
   { key: 'Notifications', icon: svgs.optionNotifications, url: null, routeTo: 'notifications', label: 'Notifications' },
   { key: 'Schedule Appointment', icon: svgs.optionAppointmentSchedule, url: 'https://calendly.com/ncsoe/60min?month=2025-02', label: 'Schedule Appointment' },
 
