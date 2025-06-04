@@ -18,7 +18,7 @@ const gridItems = [
   { key: 'Petition Queue', icon: svgs.optionPetitionQueue, url: null, label: 'Petition Queue' },
   { key: 'Polling Locations & 150’ Sign Restrictions', icon: svgs.optionPollingLocation, url: 'https://www.votenassaufl.gov/150-ft-no-solicitation-zones', label: 'Polling Locations & 150’ Sign Restrictions' },
   { key: 'Request Vote-by-Mail data', icon: svgs.optionRequestVoteByMail, url: 'https://www.votenassaufl.gov/vote-by-mail-data', label: 'Request Vote-by-Mail data' },
-  { key: 'Settings', icon: svgs.optionSettings, url: null, label: 'Settings' },
+  { key: 'Settings', icon: svgs.optionSettings, url: null,routeTo: 'settings', label: 'Settings' },
   { key: 'Campaign Finance', icon: svgs.optionCampaignFinance, url: 'https://www.votenassaufl.gov/campaign-finance-reports', label: 'Campaign Finance' },
   { key: 'Notifications', icon: svgs.optionNotifications, url: null, routeTo: 'notifications', label: 'Notifications' },
   { key: 'Schedule Appointment', icon: svgs.optionAppointmentSchedule, url: 'https://calendly.com/ncsoe/60min?month=2025-02', label: 'Schedule Appointment' },
