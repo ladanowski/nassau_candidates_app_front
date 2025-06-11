@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SafeAreaView, View, StyleSheet, ActivityIndicator } from "react-native";
 import { Colors } from "../../constants/colors";
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useRoute } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
@@ -14,9 +14,8 @@ type WebViewRouteParams = {
 };
 
 const WebViewScreen: React.FC = () => {
-    const route = useRoute<RouteProp<WebViewRouteParams, 'webView'>>();
-    const navigation = useNavigation();
-    const { link, title } = route.params;
+        const route = useRoute<RouteProp<WebViewRouteParams, 'webView'>>();
+        const { link, title } = route.params;
 
     const [loading, setLoading] = useState(true);
 

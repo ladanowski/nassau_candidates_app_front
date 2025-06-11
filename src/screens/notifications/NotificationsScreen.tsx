@@ -1,18 +1,22 @@
 import React from 'react';
-import { SafeAreaView, View, StyleSheet, Text } from "react-native";
-import { Colors } from "../../constants/colors";
+import { SafeAreaView } from "react-native";
+import { RouteProp, useRoute } from '@react-navigation/native';
+import AppBar from '../../components/AppBar';
+import { globalStyles } from '../../styles/globalStyles';
+
+type NotificationsRouteParams = {
+  notifications: {
+    title: string;
+  };
+};
 
 const NotificationsScreen: React.FC = () => {
+  const route = useRoute<RouteProp<NotificationsRouteParams, 'notifications'>>();
+  const { title } = route.params;
+
   return (
-    <SafeAreaView style={{
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: Colors.light.background,
-    }}>
-      <View>
-        <Text style={{ fontSize: 16, color: '#C30017', fontFamily: 'MyriadPro-Bold', fontStyle: 'italic', }}>Notifications Screen</Text>
-      </View>
+    <SafeAreaView style={globalStyles.safeAreaContainer}>
+      <AppBar title={title} />
     </SafeAreaView>
   );
 };
