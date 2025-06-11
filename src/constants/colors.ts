@@ -5,6 +5,8 @@ export const Colors = {
     icon: '#687076',
     primary: '#0E2662',
     secondary: '#C30017',
+    unreadNotificationCard: '#F8FAFF',
+    readNotificationCard: '#fff',
   },
   dark: {
     // text: '#ECEDEE',

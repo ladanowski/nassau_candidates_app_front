@@ -108,7 +108,7 @@ const DashboardScreen: React.FC = () => {
             </View>
           </TouchableOpacity> */}
         </View>
-        <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors.light.primary, }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors.light.primary, }} showsVerticalScrollIndicator={false}>
           <View style={{ position: 'relative', width: '100%', flex: 1 }}>
             <svgs.nassauCountry
               style={{
