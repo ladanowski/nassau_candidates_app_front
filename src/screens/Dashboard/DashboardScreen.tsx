@@ -8,6 +8,7 @@ import Footer from '../../components/Footer';
 import { globalStyles } from '../../styles/globalStyles';
 import CountdownTimer from './CountdownTimer';
 import firestore from '@react-native-firebase/firestore';
+import TermsPopup from '../../components/terms_popup';
 
 const gridItems = [
   { key: 'Announced Candidates', icon: svgs.optionAnnouncedCandidate, url: 'https://www.votenassaufl.gov/announced-candidates-and-committees', label: 'Announced Candidates' },
@@ -21,7 +22,7 @@ const gridItems = [
   { key: 'Polling Locations & 150’ Sign Restrictions', icon: svgs.optionPollingLocation, url: 'https://www.votenassaufl.gov/150-ft-no-solicitation-zones', label: 'Polling Locations & 150’ Sign Restrictions' },
   { key: 'Request Vote-by-Mail data', icon: svgs.optionRequestVoteByMail, url: 'https://www.votenassaufl.gov/vote-by-mail-data', label: 'Request Vote-by-Mail data' },
   { key: 'Schedule Appointment', icon: svgs.optionAppointmentSchedule, url: 'https://calendly.com/ncsoe/60min?month=2025-02', label: 'Schedule Appointment' },
-  { key: 'Settings – Notifications', icon: svgs.optionSettings, url: null,routeTo: 'settings', label: 'Settings – Notifications' },
+  { key: 'Settings – Notifications', icon: svgs.optionSettings, url: null, routeTo: 'settings', label: 'Settings – Notifications' },
 ];
 
 type CountdownItem = {
@@ -86,6 +87,11 @@ const DashboardScreen: React.FC = () => {
       <Text style={styles.gridLabel}>{item.label}</Text>
     </TouchableOpacity>
   );
+
+    const handlePopupClose = async () => {
+        // await AsyncStorage.setItem("isFirstLaunch", "true");
+        // setShowPopup(false);
+    };
 
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
@@ -160,6 +166,10 @@ const DashboardScreen: React.FC = () => {
         </ScrollView>
 
       </View>
+      <TermsPopup
+      onClose={handlePopupClose} 
+      />
+
     </SafeAreaView>
   );
 };

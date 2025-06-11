@@ -8,6 +8,8 @@ import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 import WebViewScreen from '../screens/WebView/WebViewScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 import NotificationDetailsScreen from '../screens/notifications/NotificationDetailsScreen';
+import PrivacyPolicyScreen from '../screens/CmsPages/PrivacyPolicyScreen';
+import TermsConditionsScreen from '../screens/CmsPages/TermsConditionsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -19,6 +21,8 @@ const AppNavigator = () => (
       <Stack.Screen name="notifications" component={NotificationsScreen}  />
       <Stack.Screen name="notificationDetails" component={NotificationDetailsScreen}  />
       <Stack.Screen name="settings" component={SettingsScreen}  />
+      <Stack.Screen name="privacyPolicy" component={PrivacyPolicyScreen}  />
+      <Stack.Screen name="termsConditions" component={TermsConditionsScreen}  />
     </Stack.Navigator>
   </NavigationContainer>
 );
