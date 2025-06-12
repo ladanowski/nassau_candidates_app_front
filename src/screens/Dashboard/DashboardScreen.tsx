@@ -9,6 +9,8 @@ import { globalStyles } from '../../styles/globalStyles';
 import CountdownTimer from './CountdownTimer';
 import firestore from '@react-native-firebase/firestore';
 import TermsPopup from '../../components/terms_popup';
+import { StorageKeys } from '../../constants/storage_keys';
+import StorageService from '../../services/StorageService';
 
 const gridItems = [
   { key: 'Announced Candidates', icon: svgs.optionAnnouncedCandidate, url: 'https://www.votenassaufl.gov/announced-candidates-and-committees', label: 'Announced Candidates' },
@@ -36,6 +38,7 @@ const DashboardScreen: React.FC = () => {
 
   const [countdownData, setCountdownData] = useState<CountdownItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showTermsPopup, setShowTermsPopup] = useState(false);
 
   useEffect(() => {
     const fetchCountdownDates = async () => {
@@ -63,6 +66,14 @@ const DashboardScreen: React.FC = () => {
     };
 
     fetchCountdownDates();
+
+    const checkFirstLaunch = async () => {
+      const isFirstLaunch = await StorageService.getItem<boolean>(StorageKeys.isFirstTime);
+      setShowTermsPopup(isFirstLaunch === null ? true : isFirstLaunch);
+    };
+
+    checkFirstLaunch();
+
   }, []);
 
 
@@ -88,10 +99,10 @@ const DashboardScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
-    const handlePopupClose = async () => {
-        // await AsyncStorage.setItem("isFirstLaunch", "true");
-        // setShowPopup(false);
-    };
+  const handlePopupClose = async () => {
+    await StorageService.saveItem(StorageKeys.isFirstTime, false);
+    setShowTermsPopup(false);
+  };
 
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
@@ -166,9 +177,11 @@ const DashboardScreen: React.FC = () => {
         </ScrollView>
 
       </View>
-      <TermsPopup
-      onClose={handlePopupClose} 
-      />
+      {showTermsPopup && (
+        <TermsPopup
+          onClose={handlePopupClose}
+        />
+      )}
 
     </SafeAreaView>
   );

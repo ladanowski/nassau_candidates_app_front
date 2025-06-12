@@ -30,14 +30,14 @@ const TermsPopup: React.FC<TermsPopupProps> = ({ onClose }) => {
                     </Text>
 
                     <TouchableOpacity activeOpacity={0.7} style={styles.linkButton} onPress={() => {
-                        // setModalVisible(false);
+                        setModalVisible(false);
                         navigation.navigate("privacyPolicy");
                     }}>
                         <Text style={styles.linkText}>View Privacy Policy</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity activeOpacity={0.7} style={styles.linkButton} onPress={() => {
-                        // setModalVisible(false);
+                        setModalVisible(false);
                         navigation.navigate("termsConditions");
                     }}>
                         <Text style={styles.linkText}>View Terms and Conditions</Text>
