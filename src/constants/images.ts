@@ -3,6 +3,7 @@ import Facebook from '../../assets/svgs/facebook.svg';
 import Instagram from '../../assets/svgs/instagram.svg';
 import Twitter from '../../assets/svgs/twitter_x.svg';
 import Back from '../../assets/svgs/back.svg';
+import ChevronRight from '../../assets/svgs/chevron_right.svg';
 import OptionAnnouncedCandidate from '../../assets/svgs/option_announced_candidate.svg';
 import OptionCanvassingBoard from '../../assets/svgs/option_canvassing_board.svg';
 import OptionContactUs from '../../assets/svgs/option_contact_us.svg';
@@ -30,6 +31,7 @@ export const svgs = {
   instagram: Instagram,
   twitter: Twitter,
   back: Back,
+  chevronRight: ChevronRight,
   optionAnnouncedCandidate: OptionAnnouncedCandidate,
   optionCanvassingBoard: OptionCanvassingBoard,
   optionContactUs: OptionContactUs,
