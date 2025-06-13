@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
@@ -6,6 +6,7 @@ import { globalStyles } from '../../styles/globalStyles';
 import { Colors } from '../../constants/colors';
 import { svgs } from '../../constants/images';
 import SwitchOptionItem from '../../components/SwitchOptionItem';
+import LoginPopup from '../../components/LoginPopup';
 
 type SettingsRouteParams = {
   settings: {
@@ -17,6 +18,8 @@ const SettingsScreen: React.FC = () => {
   const route = useRoute<RouteProp<SettingsRouteParams, 'settings'>>();
   const { title } = route.params;
   const navigation = useNavigation<NavigationProp<any>>();
+
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
 
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
@@ -30,13 +33,24 @@ const SettingsScreen: React.FC = () => {
         <SwitchOptionItem title="Miscellaneous Information" value={true} onValueChange={(val) => {/* handle toggle */ }} />
         <SwitchOptionItem title="Petition Batch Update" value={false} onValueChange={(val) => {/* handle toggle */ }} />
 
-        {renderSettingsItem("Petition Due Date - County", () => { })}
-        {renderSettingsItem("Petition Due Date - Judicial", () => { })}
-        {renderSettingsItem("Login", () => { })}
+        {renderSettingsItem("Petition Due Date - County", () => navigation.navigate("petitionDueDateCounty"))}
+        {renderSettingsItem("Petition Due Date - Judicial", () => navigation.navigate("petitionDueDateJudicial"))}
+        {renderSettingsItem("Login", () => setShowLoginPopup(true))}
         {renderSettingsItem("Privacy Policy", () => navigation.navigate("privacyPolicy"))}
         {renderSettingsItem("Terms & Conditions", () => navigation.navigate("termsConditions"))}
       </ScrollView>
+
+      <LoginPopup
+        visible={showLoginPopup}
+        onClose={() => setShowLoginPopup(false)}
+        onLogin={(credentials) => {
+          console.log('Login credentials:', credentials);
+          // Handle your login logic here
+        }}
+      />
+
     </SafeAreaView>
+
   );
 };
 

@@ -7,6 +7,7 @@ export const Colors = {
     secondary: '#C30017',
     unreadNotificationCard: '#F8FAFF',
     readNotificationCard: '#fff',
+    error: '#C30017',
   },
   dark: {
     // text: '#ECEDEE',

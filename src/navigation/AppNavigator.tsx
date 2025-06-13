@@ -13,6 +13,8 @@ import TermsConditionsScreen from '../screens/CmsPages/TermsConditionsScreen';
 import CandidateFinanceReport from '../screens/settings/CandidateFinanceReport';
 import CommitteeFinanceReport from '../screens/settings/CommitteeFinanceReport';
 import ImportantElectionDates from '../screens/settings/ImportantElectionDates';
+import PetitionDueDateCounty from '../screens/settings/PetitionDueDateCounty';
+import PetitionDueDateJudicial from '../screens/settings/PetitionDueDateJudicial';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +29,8 @@ const AppNavigator = () => (
       <Stack.Screen name="candidateFinanceReport" component={CandidateFinanceReport} />
       <Stack.Screen name="committeeFinanceReport" component={CommitteeFinanceReport} />
       <Stack.Screen name="importantElectionDates" component={ImportantElectionDates} />
+      <Stack.Screen name="petitionDueDateCounty" component={PetitionDueDateCounty} />
+      <Stack.Screen name="petitionDueDateJudicial" component={PetitionDueDateJudicial} />
       <Stack.Screen name="privacyPolicy" component={PrivacyPolicyScreen} />
       <Stack.Screen name="termsConditions" component={TermsConditionsScreen} />
     </Stack.Navigator>

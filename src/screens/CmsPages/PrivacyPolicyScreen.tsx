@@ -4,6 +4,7 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
 import { Colors } from '../../constants/colors';
+import Button from '../../components/Button';
 
 const PrivacyPolicyScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp<any>>();
@@ -18,14 +19,8 @@ const PrivacyPolicyScreen: React.FC = () => {
                 </Text>
             </ScrollView>
 
-            <View style={{
-                padding: 16,
-            }}>
-                <TouchableOpacity activeOpacity={0.7} style={styles.button} onPress={() => {
-                    navigation.navigate("termsConditions");
-                }}>
-                    <Text style={styles.buttonText}>View Terms & Conditions</Text>
-                </TouchableOpacity>
+            <View style={{ padding: 16, }}> 
+                <Button title="View Terms & Conditions" onPress={() => navigation.navigate("termsConditions")} />
             </View>
         </SafeAreaView>
     );
@@ -44,19 +39,6 @@ const styles = StyleSheet.create({
         lineHeight: 24,
         textAlign: 'left',
         fontFamily: 'MyriadPro-Regular',
-    },
-
-    button: {
-        width: "100%",
-        padding: 12,
-        backgroundColor: Colors.light.primary,
-        borderRadius: 8,
-        alignItems: "center",
-    },
-    buttonText: {
-        color: "white",
-        fontSize: 15,
-        fontFamily: 'MyriadPro-Bold',
     },
 });
 
