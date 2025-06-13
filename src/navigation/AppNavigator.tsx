@@ -10,19 +10,25 @@ import SettingsScreen from '../screens/settings/SettingsScreen';
 import NotificationDetailsScreen from '../screens/notifications/NotificationDetailsScreen';
 import PrivacyPolicyScreen from '../screens/CmsPages/PrivacyPolicyScreen';
 import TermsConditionsScreen from '../screens/CmsPages/TermsConditionsScreen';
+import CandidateFinanceReport from '../screens/settings/CandidateFinanceReport';
+import CommitteeFinanceReport from '../screens/settings/CommitteeFinanceReport';
+import ImportantElectionDates from '../screens/settings/ImportantElectionDates';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => (
   <NavigationContainer ref={navigationRef}>
     <Stack.Navigator initialRouteName="Dashboard" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Dashboard" component={DashboardScreen}  />
-      <Stack.Screen name="webView" component={WebViewScreen}  />
-      <Stack.Screen name="notifications" component={NotificationsScreen}  />
-      <Stack.Screen name="notificationDetails" component={NotificationDetailsScreen}  />
-      <Stack.Screen name="settings" component={SettingsScreen}  />
-      <Stack.Screen name="privacyPolicy" component={PrivacyPolicyScreen}  />
-      <Stack.Screen name="termsConditions" component={TermsConditionsScreen}  />
+      <Stack.Screen name="Dashboard" component={DashboardScreen} />
+      <Stack.Screen name="webView" component={WebViewScreen} />
+      <Stack.Screen name="notifications" component={NotificationsScreen} />
+      <Stack.Screen name="notificationDetails" component={NotificationDetailsScreen} />
+      <Stack.Screen name="settings" component={SettingsScreen} />
+      <Stack.Screen name="candidateFinanceReport" component={CandidateFinanceReport} />
+      <Stack.Screen name="committeeFinanceReport" component={CommitteeFinanceReport} />
+      <Stack.Screen name="importantElectionDates" component={ImportantElectionDates} />
+      <Stack.Screen name="privacyPolicy" component={PrivacyPolicyScreen} />
+      <Stack.Screen name="termsConditions" component={TermsConditionsScreen} />
     </Stack.Navigator>
   </NavigationContainer>
 );

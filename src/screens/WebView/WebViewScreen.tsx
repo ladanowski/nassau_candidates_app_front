@@ -14,8 +14,8 @@ type WebViewRouteParams = {
 };
 
 const WebViewScreen: React.FC = () => {
-        const route = useRoute<RouteProp<WebViewRouteParams, 'webView'>>();
-        const { link, title } = route.params;
+    const route = useRoute<RouteProp<WebViewRouteParams, 'webView'>>();
+    const { link, title } = route.params;
 
     const [loading, setLoading] = useState(true);
 
