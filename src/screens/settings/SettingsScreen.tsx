@@ -21,6 +21,9 @@ const SettingsScreen: React.FC = () => {
 
   const [showLoginPopup, setShowLoginPopup] = useState(false);
 
+  const [isMiscellaneousInfo, setIsMiscellaneousInfo] = useState(false);
+  const [isPetitionBatchUpdate, setIsPetitionBatchUpdate] = useState(false);
+
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
       <AppBar title={title} />
@@ -30,8 +33,8 @@ const SettingsScreen: React.FC = () => {
         {renderSettingsItem("Committee Finance Report", () => navigation.navigate("committeeFinanceReport"))}
         {renderSettingsItem("Important Election Dates", () => navigation.navigate("importantElectionDates"))}
 
-        <SwitchOptionItem title="Miscellaneous Information" value={true} onValueChange={(val) => {/* handle toggle */ }} />
-        <SwitchOptionItem title="Petition Batch Update" value={false} onValueChange={(val) => {/* handle toggle */ }} />
+        <SwitchOptionItem title="Miscellaneous Information" value={isMiscellaneousInfo} onValueChange={(val) => setIsMiscellaneousInfo(val)} />
+        <SwitchOptionItem title="Petition Batch Update" value={isPetitionBatchUpdate} onValueChange={(val) => setIsPetitionBatchUpdate(val)} />
 
         {renderSettingsItem("Petition Due Date - County", () => navigation.navigate("petitionDueDateCounty"))}
         {renderSettingsItem("Petition Due Date - Judicial", () => navigation.navigate("petitionDueDateJudicial"))}
