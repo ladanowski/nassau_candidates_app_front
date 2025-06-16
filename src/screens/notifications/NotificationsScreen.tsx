@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import { FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useState, useEffect } from 'react';
+import {
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
@@ -25,107 +33,54 @@ const NotificationsScreen: React.FC = () => {
   const { title } = route.params;
   const navigation = useNavigation<NavigationProp<any>>();
 
-  // Sample notification data
-  const [notifications, setNotifications] = useState<Notification[]>([
-    // Test "Just now" (within 1 hour - 10 minutes ago)
-    {
-      id: '1',
-      title: 'Message Sent Successfully',
-      message: 'Your message has been delivered to all recipients.',
-      dateTime: '2025-06-11T14:26:00Z', // 10 minutes ago
-      isRead: false,
-      type: 'success',
-    },
-    // Test "Just now" (30 minutes ago)
-    {
-      id: '2',
-      title: 'New Comment on Your Post',
-      message: 'Sarah liked your recent photo and left a comment.',
-      dateTime: '2025-06-11T14:06:00Z', // 30 minutes ago
-      isRead: false,
-      type: 'info',
-    },
-    // Test "2h ago" (2 hours ago)
-    {
-      id: '3',
-      title: 'Reminder: Meeting in 1 hour',
-      message: 'Don\'t forget about your scheduled meeting with the design team.',
-      dateTime: '2025-06-11T12:36:00Z', // 2 hours ago
-      isRead: true,
-      type: 'warning',
-    },
-    // Test "5h ago" (5 hours ago)
-    {
-      id: '4',
-      title: 'Weekly Report Ready',
-      message: 'Your weekly analytics report is now available for download.',
-      dateTime: '2025-06-11T09:36:00Z', // 5 hours ago
-      isRead: false,
-      type: 'info',
-    },
-    // Test "Yesterday" (25 hours ago - June 10)
-    {
-      id: '5',
-      title: 'System Maintenance Complete',
-      message: 'Scheduled maintenance has been completed. All services are now running normally.',
-      dateTime: '2025-06-10T13:36:00Z', // 25 hours ago (yesterday)
-      isRead: false,
-      type: 'success',
-    },
-    // Test "Yesterday" (30 hours ago - June 10)
-    {
-      id: '6',
-      title: 'Security Update Installed',
-      message: 'Latest security patches have been applied to your account.',
-      dateTime: '2025-06-10T08:36:00Z', // 30 hours ago (yesterday)
-      isRead: false,
-      type: 'success',
-    },
-    // Test date format (3 days ago - June 8)
-    {
-      id: '7',
-      title: 'Payment Received',
-      message: 'We have received your payment of $49.99. Thank you!',
-      dateTime: '2025-06-08T14:36:00Z', // 3 days ago
-      isRead: true,
-      type: 'success',
-    },
-    // Test date format (1 week ago - June 4)
-    {
-      id: '8',
-      title: 'Welcome to Premium!',
-      message: 'Congratulations! You now have access to all premium features.',
-      dateTime: '2025-06-04T10:00:00Z', // 1 week ago
-      isRead: true,
-      type: 'success',
-    },
-    // Test date format with different year (1 year ago - June 2024)
-    {
-      id: '9',
-      title: 'Anniversary Celebration',
-      message: 'It\'s been one year since you joined us! Thanks for being part of our community.',
-      dateTime: '2024-06-11T14:36:00Z', // 1 year ago (different year)
-      isRead: true,
-      type: 'info',
-    },
-    // Test date format with different year (2 years ago - March 2023)
-    {
-      id: '10',
-      title: 'Welcome to Candidate App of Vote Nassau! 🗳️',
-      message: 'Thanks for joining us! Stay tuned for real-time updates, candidate info, and all things Election Day. Let’s make informed voting easy!',
-      dateTime: '2023-03-15T09:00:00Z', // 2+ years ago (different year)
-      isRead: false,
-      type: 'success',
-    },
-    {
-      id: '11',
-      title: 'Account Created',
-      message: 'Welcome! Your account has been successfully created.',
-      dateTime: '2023-03-15T09:00:00Z', // 2+ years ago (different year)
-      isRead: true,
-      type: 'success',
-    },
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (loading || !hasMore) return;
+
+      setLoading(true);
+      try {
+        const limit = 10;
+        const response = await fetch(`https://jsonplaceholder.typicode.com/posts?_page=${page}&_limit=${limit}`);
+        const data = await response.json();
+
+        if (data.length < limit) setHasMore(false);
+
+        const formattedData: Notification[] = data.map((item: any, index: number) => ({
+          id: item.id.toString(),
+          title: item.title,
+          message: item.body,
+          dateTime: new Date(Date.now() - (page * 10 + index) * 60 * 1000).toISOString(),
+          isRead: false,
+          type: item.id % 4 === 0
+            ? 'info'
+            : item.id % 4 === 1
+              ? 'success'
+              : item.id % 4 === 2
+                ? 'warning'
+                : 'error',
+        }));
+
+        setNotifications(prev => [...prev, ...formattedData]);
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, [page]);
+
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      setPage(prev => prev + 1);
+    }
+  };
 
   const formatDateTime = (dateTime: string): string => {
     const date = new Date(dateTime);
@@ -149,14 +104,10 @@ const NotificationsScreen: React.FC = () => {
 
   const getTypeColor = (type: string = 'info'): string => {
     switch (type) {
-      case 'success':
-        return '#10B981';
-      case 'warning':
-        return '#F59E0B';
-      case 'error':
-        return '#EF4444';
-      default:
-        return '#3B82F6';
+      case 'success': return '#10B981';
+      case 'warning': return '#F59E0B';
+      case 'error': return '#EF4444';
+      default: return '#3B82F6';
     }
   };
 
@@ -171,15 +122,11 @@ const NotificationsScreen: React.FC = () => {
   };
 
   const handleNotificationPress = (notification: Notification) => {
-    // Mark as read if it's unread
     if (!notification.isRead) {
       markAsRead(notification.id);
     }
 
-    navigation.navigate('notificationDetails', {
-      notification,
-    });
-
+    navigation.navigate('notificationDetails', { notification });
   };
 
   const renderNotificationItem = ({ item }: { item: Notification }) => (
@@ -191,12 +138,8 @@ const NotificationsScreen: React.FC = () => {
       onPress={() => handleNotificationPress(item)}
       activeOpacity={0.7}
     >
-      {/* Unread indicator */}
       {!item.isRead && <View style={styles.unreadIndicator} />}
-
-      {/* Type indicator */}
       <View style={[styles.typeIndicator, { backgroundColor: getTypeColor(item.type) }]} />
-
       <View style={styles.contentContainer}>
         <View style={styles.headerContainer}>
           <Text style={[styles.title, !item.isRead && styles.unreadTitle]} numberOfLines={1}>
@@ -204,7 +147,6 @@ const NotificationsScreen: React.FC = () => {
           </Text>
           <Text style={styles.dateTime}>{formatDateTime(item.dateTime)}</Text>
         </View>
-
         <Text style={[styles.message, !item.isRead && styles.unreadMessage]} numberOfLines={2}>
           {item.message}
         </Text>
@@ -212,10 +154,18 @@ const NotificationsScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
+  const renderFooter = () => {
+    if (!loading) return null;
+    return (
+      <View style={{ paddingVertical: 16 }}>
+        <ActivityIndicator size="large" color={Colors.light.primary} />
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
       <AppBar title={title} />
-
       <FlatList
         data={notifications}
         renderItem={renderNotificationItem}
@@ -223,6 +173,9 @@ const NotificationsScreen: React.FC = () => {
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
       />
     </SafeAreaView>
   );
@@ -241,10 +194,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
