@@ -11,19 +11,20 @@ import firestore from '@react-native-firebase/firestore';
 import TermsPopup from '../../components/terms_popup';
 import { StorageKeys } from '../../constants/storage_keys';
 import StorageService from '../../services/StorageService';
+import LoginPopup from '../../components/LoginPopup';
 
 const gridItems = [
   { key: 'Announced Candidates', icon: svgs.optionAnnouncedCandidate, url: 'https://www.votenassaufl.gov/announced-candidates-and-committees', label: 'Announced Candidates' },
-  { key: 'Campaign Finance', icon: svgs.optionCampaignFinance, url: 'https://www.votenassaufl.gov/campaign-finance-reports', label: 'Campaign Finance' },
+  { key: 'Campaign Finance', icon: svgs.optionCampaignFinance, url: 'https://www.votenassaufl.gov/campaign-finance-reports', label: 'Campaign Finance', requiredAuth: true },
   { key: 'Canvassing Board Schedule', icon: svgs.optionCanvassingBoard, url: 'https://www.votenassaufl.gov/canvassing-board', label: 'Canvassing Board Schedule' },
   { key: 'Contact Us', icon: svgs.optionContactUs, url: 'https://www.votenassaufl.gov/contact', label: 'Contact Us' },
   { key: 'Election Countdown', icon: svgs.optionElectionCountdown, url: 'https://www.votenassaufl.gov/upcoming-elections', label: 'Election Countdown' },
-  { key: 'Notifications', icon: svgs.optionNotifications, url: null, routeTo: 'notifications', label: 'Notifications' },
+  { key: 'Notifications', icon: svgs.optionNotifications, url: null, routeTo: 'notifications', label: 'Notifications', requiredAuth: true },
   { key: 'Offices up for Election', icon: svgs.optionOfficeUpForElection, url: 'https://www.votenassaufl.gov/offices-up-for-election', label: 'Offices up for Election' },
-  { key: 'Petition Queue', icon: svgs.optionPetitionQueue, url: null, label: 'Petition Queue' },
+  { key: 'Petition Queue', icon: svgs.optionPetitionQueue, url: null, label: 'Petition Queue', requiredAuth: true },
   { key: 'Polling Locations & 150’ Sign Restrictions', icon: svgs.optionPollingLocation, url: 'https://www.votenassaufl.gov/150-ft-no-solicitation-zones', label: 'Polling Locations & 150’ Sign Restrictions' },
-  { key: 'Request Vote-by-Mail data', icon: svgs.optionRequestVoteByMail, url: 'https://www.votenassaufl.gov/vote-by-mail-data', label: 'Request Vote-by-Mail data' },
-  { key: 'Schedule Appointment', icon: svgs.optionAppointmentSchedule, url: 'https://calendly.com/ncsoe/60min?month=2025-02', label: 'Schedule Appointment' },
+  { key: 'Request Vote-by-Mail data', icon: svgs.optionRequestVoteByMail, url: 'https://www.votenassaufl.gov/vote-by-mail-data', label: 'Request Vote-by-Mail data', requiredAuth: true },
+  { key: 'Schedule Appointment', icon: svgs.optionAppointmentSchedule, url: 'https://www.votenassaufl.gov/qualifying-for-office', label: 'Schedule Appointment' },
   { key: 'Settings – Notifications', icon: svgs.optionSettings, url: null, routeTo: 'settings', label: 'Settings – Notifications' },
 ];
 
@@ -39,6 +40,8 @@ const DashboardScreen: React.FC = () => {
   const [countdownData, setCountdownData] = useState<CountdownItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTermsPopup, setShowTermsPopup] = useState(false);
+
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
 
   useEffect(() => {
     const fetchCountdownDates = async () => {
@@ -78,7 +81,17 @@ const DashboardScreen: React.FC = () => {
 
 
   const renderGridItem = ({ item }: any) => (
-    <TouchableOpacity style={styles.gridItem} activeOpacity={0.7} onPress={() => {
+    <TouchableOpacity style={styles.gridItem} activeOpacity={0.7} onPress={async () => {
+      // Check if the item requires authentication
+      const authToken = await StorageService.getItem<string>(StorageKeys.authToken);
+      if (item.requiredAuth && !authToken) {
+        // If auth is required and no token, show login popup
+        setShowLoginPopup(true);
+        return;
+      }
+
+
+      // Proceed if no auth needed or user is logged in
       if (item.url) {
         // If the item has a URL, navigate to the web view
         navigation.navigate('webView', {
@@ -182,6 +195,16 @@ const DashboardScreen: React.FC = () => {
           onClose={handlePopupClose}
         />
       )}
+
+      <LoginPopup
+        visible={showLoginPopup}
+        onClose={() => setShowLoginPopup(false)}
+        onLogin={async (credentials) => {
+          console.log('Login credentials:', credentials);
+          // Handle your login logic here
+           await StorageService.saveItem(StorageKeys.authToken, 'TOKEN123');
+        }}
+      />
 
     </SafeAreaView>
   );

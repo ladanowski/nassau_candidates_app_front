@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState } from 'react';
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
@@ -7,6 +7,8 @@ import { Colors } from '../../constants/colors';
 import { svgs } from '../../constants/images';
 import SwitchOptionItem from '../../components/SwitchOptionItem';
 import LoginPopup from '../../components/LoginPopup';
+import { StorageKeys } from '../../constants/storage_keys';
+import StorageService from '../../services/StorageService';
 
 type SettingsRouteParams = {
   settings: {
@@ -24,6 +26,39 @@ const SettingsScreen: React.FC = () => {
   const [isMiscellaneousInfo, setIsMiscellaneousInfo] = useState(false);
   const [isPetitionBatchUpdate, setIsPetitionBatchUpdate] = useState(false);
 
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuthToken = async () => {
+      const token = await StorageService.getItem<string>(StorageKeys.authToken);
+      setAuthToken(token);
+    };
+
+    checkAuthToken();
+  }, []);
+
+
+  // Handler for logout
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "No",
+          style: "cancel"
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            await StorageService.removeItem(StorageKeys.authToken);
+            setAuthToken(null);
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
       <AppBar title={title} />
@@ -38,7 +73,10 @@ const SettingsScreen: React.FC = () => {
 
         {renderSettingsItem("Petition Due Date - County", () => navigation.navigate("petitionDueDateCounty"))}
         {renderSettingsItem("Petition Due Date - Judicial", () => navigation.navigate("petitionDueDateJudicial"))}
-        {renderSettingsItem("Login", () => setShowLoginPopup(true))}
+        {authToken
+          ? renderSettingsItem("Logout", handleLogout)
+          : renderSettingsItem("Login", () => setShowLoginPopup(true))
+        }
         {renderSettingsItem("Privacy Policy", () => navigation.navigate("privacyPolicy"))}
         {renderSettingsItem("Terms & Conditions", () => navigation.navigate("termsConditions"))}
       </ScrollView>
@@ -46,9 +84,11 @@ const SettingsScreen: React.FC = () => {
       <LoginPopup
         visible={showLoginPopup}
         onClose={() => setShowLoginPopup(false)}
-        onLogin={(credentials) => {
+        onLogin={async (credentials) => {
           console.log('Login credentials:', credentials);
           // Handle your login logic here
+          await StorageService.saveItem(StorageKeys.authToken, 'TOKEN123');
+          setAuthToken('TOKEN123');
         }}
       />
 

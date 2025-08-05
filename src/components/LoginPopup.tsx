@@ -11,10 +11,12 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Dimensions,
+    Image,
 } from 'react-native';
 import { Colors } from '../constants/colors';
 import { globalStyles } from '../styles/globalStyles';
 import Button from './Button';
+import { images } from '../constants/images';
 
 const { width } = Dimensions.get("window");
 
@@ -103,15 +105,17 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLogin }) =>
                             <View style={[globalStyles.modalContent, { width: width * 0.9 }]}>
                                 {/* Header */}
                                 <View style={styles.header}>
-                                    <Text style={styles.title}>Login</Text>
+                                    <Image source={images.logo} style={{ width: 100, height: 100 }} />
                                     <TouchableOpacity
                                         activeOpacity={0.7}
-                                        style={styles.closeButton}
+                                        style={[styles.closeButton, { position: 'absolute', right: 0, top: 0 }]}
                                         onPress={handleClose}
                                     >
                                         <Text style={styles.closeButtonText}>×</Text>
                                     </TouchableOpacity>
                                 </View>
+
+                                <Text style={styles.title}>Login</Text>
 
                                 <Text style={styles.description}>
                                     Please enter your credentials to continue
@@ -198,17 +202,18 @@ const styles = StyleSheet.create({
 
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
         width: '100%',
         marginBottom: 10,
+        position: 'relative',
     },
     title: {
         fontSize: 22,
         color: Colors.light.primary,
         fontFamily: 'MyriadPro-Bold',
         textAlign: "center",
-        flex: 1,
+        marginBottom: 10,
     },
     closeButton: {
         width: 26,

@@ -19,10 +19,12 @@ import OptionAppointmentSchedule from '../../assets/svgs/option_schedule_appoint
 import TimerBackground from '../../assets/svgs/timer_background.svg';
 import NassauCountry from '../../assets/svgs/nassau_country.svg';
 import BannerHeader from '../../assets/images/bannerHeader.png';
+import Logo from '../../assets/images/logo.png';
 
 
 export const images = {
   bannerHeader: BannerHeader,
+  logo: Logo,
 };
 
 export const svgs = {
