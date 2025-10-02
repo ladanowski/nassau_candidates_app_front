@@ -7,8 +7,8 @@ const BannerHeader: React.FC = () => {
   return (
     <View style={styles.container}>
       <ImageBackground
-        style={{ width: '100%', height: 120 }}
-        resizeMode="stretch" source={images.bannerHeader}
+        style={{ width: '100%', aspectRatio: 240 / 73 }}
+        resizeMode="contain" source={images.bannerHeader}
       />
     </View>
   );
