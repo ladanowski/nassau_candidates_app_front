@@ -23,8 +23,11 @@ const SettingsScreen: React.FC = () => {
 
   const [showLoginPopup, setShowLoginPopup] = useState(false);
 
+  const [isFinanceReport, setIsFinanceReport] = useState(false);
+  const [isImportantElectionDates, setIsImportantElectionDates] = useState(false);
   const [isMiscellaneousInfo, setIsMiscellaneousInfo] = useState(false);
   const [isPetitionBatchUpdate, setIsPetitionBatchUpdate] = useState(false);
+  const [isQualifying, setIsQualifying] = useState(false);
 
   const [authToken, setAuthToken] = useState<string | null>(null);
 
@@ -64,15 +67,11 @@ const SettingsScreen: React.FC = () => {
       <AppBar title={title} />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {renderSettingsItem("Candidate Finance Report", () => navigation.navigate("candidateFinanceReport"))}
-        {renderSettingsItem("Committee Finance Report", () => navigation.navigate("committeeFinanceReport"))}
-        {renderSettingsItem("Important Election Dates", () => navigation.navigate("importantElectionDates"))}
-
-        <SwitchOptionItem title="Miscellaneous Information" value={isMiscellaneousInfo} onValueChange={(val) => setIsMiscellaneousInfo(val)} />
-        <SwitchOptionItem title="Petition Batch Update" value={isPetitionBatchUpdate} onValueChange={(val) => setIsPetitionBatchUpdate(val)} />
-
-        {renderSettingsItem("Petition Due Date - County", () => navigation.navigate("petitionDueDateCounty"))}
-        {renderSettingsItem("Petition Due Date - Judicial", () => navigation.navigate("petitionDueDateJudicial"))}
+        <SwitchOptionItem title="Finance Report" value={isFinanceReport} onValueChange={(val) => authToken ? setIsFinanceReport(val) : setShowLoginPopup(true)} />
+        <SwitchOptionItem title="Important Election Dates" value={isImportantElectionDates} onValueChange={(val) => authToken ? setIsImportantElectionDates(val) : setShowLoginPopup(true)} />
+        <SwitchOptionItem title="Miscellaneous Information" value={isMiscellaneousInfo} onValueChange={(val) => authToken ? setIsMiscellaneousInfo(val) : setShowLoginPopup(true)} />
+        <SwitchOptionItem title="Petition Batch Update" value={isPetitionBatchUpdate} onValueChange={(val) => authToken ? setIsPetitionBatchUpdate(val) : setShowLoginPopup(true)} />
+        <SwitchOptionItem title="Qualifying" value={isQualifying} onValueChange={(val) => authToken ? setIsQualifying(val) : setShowLoginPopup(true)} />
         {authToken
           ? renderSettingsItem("Logout", handleLogout)
           : renderSettingsItem("Login", () => setShowLoginPopup(true))

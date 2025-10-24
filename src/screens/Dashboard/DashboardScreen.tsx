@@ -21,7 +21,7 @@ const gridItems = [
   { key: 'Election Countdown', icon: svgs.optionElectionCountdown, url: 'https://www.votenassaufl.gov/upcoming-elections', label: 'Election Countdown' },
   { key: 'Notifications', icon: svgs.optionNotifications, url: null, routeTo: 'notifications', label: 'Notifications', requiredAuth: true },
   { key: 'Offices up for Election', icon: svgs.optionOfficeUpForElection, url: 'https://www.votenassaufl.gov/offices-up-for-election', label: 'Offices up for Election' },
-  { key: 'Petition Queue', icon: svgs.optionPetitionQueue, url: null, label: 'Petition Queue', requiredAuth: true },
+  { key: 'Petition Queue', icon: svgs.optionPetitionQueue, url: null, label: 'Petition Queue', routeTo: 'petitionQueue'},
   { key: 'Polling Locations & 150’ Sign Restrictions', icon: svgs.optionPollingLocation, url: 'https://www.votenassaufl.gov/150-ft-no-solicitation-zones', label: 'Polling Locations & 150’ Sign Restrictions' },
   { key: 'Request Vote-by-Mail data', icon: svgs.optionRequestVoteByMail, url: 'https://www.votenassaufl.gov/vote-by-mail-data', label: 'Request Vote-by-Mail data', requiredAuth: true },
   { key: 'Schedule Appointment', icon: svgs.optionAppointmentSchedule, url: 'https://www.votenassaufl.gov/qualifying-for-office', label: 'Schedule Appointment' },

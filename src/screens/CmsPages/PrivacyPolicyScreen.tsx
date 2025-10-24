@@ -1,9 +1,8 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
-import { Colors } from '../../constants/colors';
 import Button from '../../components/Button';
 
 const PrivacyPolicyScreen: React.FC = () => {
