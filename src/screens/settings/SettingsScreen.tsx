@@ -83,11 +83,14 @@ const SettingsScreen: React.FC = () => {
       <LoginPopup
         visible={showLoginPopup}
         onClose={() => setShowLoginPopup(false)}
-        onLogin={async (credentials) => {
-          console.log('Login credentials:', credentials);
-          // Handle your login logic here
-          await StorageService.saveItem(StorageKeys.authToken, 'TOKEN123');
-          setAuthToken('TOKEN123');
+        onLoginSuccess={async (data) => {
+          console.log('Login response:', data);
+          if (data.token) {
+            // Store the actual token from API response
+            await StorageService.saveItem(StorageKeys.authToken, data.token);
+            setAuthToken(data.token);
+            await StorageService.saveItem(StorageKeys.candidateId, data.user?.id);
+          }
         }}
       />
 

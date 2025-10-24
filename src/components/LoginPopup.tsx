@@ -23,10 +23,14 @@ const { width } = Dimensions.get("window");
 interface LoginPopupProps {
     visible: boolean;
     onClose: () => void;
-    onLogin?: (credentials: { email: string; password: string }) => void;
+    onLoginSuccess?: (data: { 
+        email: string;
+        user?: any; 
+        token?: string; 
+    }) => void;
 }
 
-const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLogin }) => {
+const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSuccess }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -57,21 +61,41 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLogin }) =>
         setIsLoading(true);
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Make API call to login endpoint
+            const response = await fetch('http://192.168.14.89:3001/LoginCandidate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email.trim(),
+                    password: password,
+                }),
+            });
 
-            // Call the onLogin callback with credentials
-            if (onLogin) {
-                onLogin({ email, password });
+            const data = await response.json();
+
+            if (data.success && data.token) {
+                // Call the onLoginSuccess callback with the API response data
+                if (onLoginSuccess) {
+                    onLoginSuccess({ 
+                        email,
+                        user: data.user, 
+                        token: data.token 
+                    });
+                }
+
+                // Reset form
+                resetForm();
+
+                Alert.alert('Success', 'Login successful!');
+                onClose();
+            } else {
+                Alert.alert('Error', data.message || 'Login failed. Please check your credentials.');
             }
-
-            // Reset form
-            resetForm();
-
-            Alert.alert('Success', 'Login successful!');
-            onClose();
         } catch (error) {
-            Alert.alert('Error', 'Login failed. Please try again.');
+            console.error('Login API error:', error);
+            Alert.alert('Error', 'Network error. Please check your connection and try again.');
         } finally {
             setIsLoading(false);
         }
