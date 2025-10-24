@@ -4,6 +4,7 @@ import { navigationRef } from '../services/NavigationService';
 // import { createStackNavigator } from '@react-navigation/stack';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import DashboardScreen from '../screens/Dashboard/DashboardScreen';
+import PetitionQueueScreen from '../screens/petitionQueue/PetitionQueueScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 import WebViewScreen from '../screens/WebView/WebViewScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
@@ -25,6 +26,7 @@ const AppNavigator = () => (
       <Stack.Screen name="webView" component={WebViewScreen} />
       <Stack.Screen name="notifications" component={NotificationsScreen} />
       <Stack.Screen name="notificationDetails" component={NotificationDetailsScreen} />
+      <Stack.Screen name="petitionQueue" component={PetitionQueueScreen} />
       <Stack.Screen name="settings" component={SettingsScreen} />
       <Stack.Screen name="candidateFinanceReport" component={CandidateFinanceReport} />
       <Stack.Screen name="committeeFinanceReport" component={CommitteeFinanceReport} />
