@@ -17,6 +17,7 @@ import { Colors } from '../constants/colors';
 import { globalStyles } from '../styles/globalStyles';
 import Button from './Button';
 import { images } from '../constants/images';
+import { loginCandidate } from '../services/api_services/AuthService';
 
 const { width } = Dimensions.get("window");
 
@@ -62,18 +63,18 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSucces
 
         try {
             // Make API call to login endpoint
-            const response = await fetch('http://192.168.14.89:3001/LoginCandidate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: email.trim(),
-                    password: password,
-                }),
-            });
+            // const response = await fetch('http://192.168.14.89:3002/api/auth/LoginCandidate', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify({
+            //         email: email.trim(),
+            //         password: password,
+            //     }),
+            // });
 
-            const data = await response.json();
+            const data = await loginCandidate(email.trim(), password);
 
             if (data.success && data.token) {
                 // Call the onLoginSuccess callback with the API response data

@@ -4,6 +4,7 @@ import { RouteProp, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
 import { Colors } from '../../constants/colors';
+import { getPetitionQueue } from '../../services/api_services/PetitionService';
 
 
 type PetitionQueueRouteParams = {
@@ -25,21 +26,16 @@ const PetitionQueueScreen: React.FC = () => {
             setLoading(true);
             setError(null);
             try {
-                const resp = await fetch('http://192.168.14.89:3001/selectPetitionQueue', {
-                    method: 'GET',
-                });
-                const json = await resp.json();
-                if (json && json.success && Array.isArray(json.data)) {
-                    const mapped = json.data.map((item: any) => ({
-                        candidate: item.CandidateName,
-                        batch: item.BatchNum,
-                        count: item.Count,
-                        status: item.Status,
-                    }));
-                    setData(mapped);
-                } else {
-                    setData([]);
-                }
+                const raw = await getPetitionQueue();
+
+                const mapped = raw.map((item: any) => ({
+                    candidate: item.CandidateName,
+                    batch: item.BatchNum,
+                    count: item.Count,
+                    status: item.Status,
+                }));
+                setData(mapped);
+                
             } catch (e: any) {
                 console.error('Failed to fetch petition queue:', e);
                 setError('Failed to load data');
