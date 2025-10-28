@@ -8,6 +8,11 @@ type LoginResponse = {
   message?: string;
 };
 
-export async function loginCandidate(email: string, password: string): Promise<LoginResponse> {
-  return ApiClient.post<LoginResponse>(Endpoints.loginCandidate, { email, password });
+export async function loginCandidate(email: string, password: string, fcmToken?: string | null): Promise<LoginResponse> {
+  const body: Record<string, any> = { email, password };
+  if (fcmToken) {
+    body.fcmToken = fcmToken;
+  }
+  console.warn('Login Request Body', body)
+  return ApiClient.post<LoginResponse>(Endpoints.loginCandidate, body);
 }

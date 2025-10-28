@@ -18,6 +18,8 @@ import { globalStyles } from '../styles/globalStyles';
 import Button from './Button';
 import { images } from '../constants/images';
 import { loginCandidate } from '../services/api_services/AuthService';
+import StorageService from '../services/StorageService';
+import { StorageKeys } from '../constants/storage_keys';
 
 const { width } = Dimensions.get("window");
 
@@ -74,7 +76,9 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSucces
             //     }),
             // });
 
-            const data = await loginCandidate(email.trim(), password);
+            const fcmToken = await StorageService.getItem<string>(StorageKeys.fcmToken);
+
+            const data = await loginCandidate(email.trim(), password, fcmToken);
 
             if (data.success && data.token) {
                 // Call the onLoginSuccess callback with the API response data

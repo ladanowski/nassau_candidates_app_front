@@ -8,6 +8,8 @@ import AppNavigator from './src/navigation/AppNavigator';
 import NotificationService from './src/services/NotificationService';
 import firestore from '@react-native-firebase/firestore';
 import DeviceInfo from 'react-native-device-info';
+import StorageService from './src/services/StorageService';
+import { StorageKeys } from './src/constants/storage_keys';
 
 const App = () => {
   useEffect(() => {
@@ -66,6 +68,7 @@ const App = () => {
         console.log('FCM Token:', fcmToken);
         // Send this token to your backend server
         // await sendTokenToServer(fcmToken);
+        await StorageService.saveItem(StorageKeys.fcmToken, fcmToken);
         saveTokenToFirestore(fcmToken);
         return fcmToken;
       }
