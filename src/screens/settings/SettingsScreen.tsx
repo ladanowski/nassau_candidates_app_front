@@ -9,6 +9,7 @@ import SwitchOptionItem from '../../components/SwitchOptionItem';
 import LoginPopup from '../../components/LoginPopup';
 import { StorageKeys } from '../../constants/storage_keys';
 import StorageService from '../../services/StorageService';
+import { getSettings } from '../../services/api_services/SettingsService';
 
 type SettingsRouteParams = {
   settings: {
@@ -41,6 +42,25 @@ const SettingsScreen: React.FC = () => {
   }, []);
 
 
+  useEffect(() => {
+    if (!authToken) return;
+    fetchSettings();
+  }, [authToken]);
+
+  const fetchSettings = async () => {
+    try {
+      const settings = await getSettings();
+      setIsFinanceReport(settings?.FinanceReport || false);
+      setIsImportantElectionDates(settings?.ImportantElectionDates || false);
+      setIsMiscellaneousInfo(settings?.MiscInformation || false);
+      setIsPetitionBatchUpdate(settings?.PetitionBatchUpdate || false);
+      setIsQualifying(settings?.Qualifying || false);
+
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+    }
+  };
+
   // Handler for logout
   const handleLogout = async () => {
     Alert.alert(
@@ -56,6 +76,13 @@ const SettingsScreen: React.FC = () => {
           onPress: async () => {
             await StorageService.removeItem(StorageKeys.authToken);
             setAuthToken(null);
+
+            // reset switches
+            setIsFinanceReport(false);
+            setIsImportantElectionDates(false);
+            setIsMiscellaneousInfo(false);
+            setIsPetitionBatchUpdate(false);
+            setIsQualifying(false);
           }
         }
       ]
@@ -90,6 +117,9 @@ const SettingsScreen: React.FC = () => {
             await StorageService.saveItem(StorageKeys.authToken, data.token);
             setAuthToken(data.token);
             await StorageService.saveItem(StorageKeys.candidateId, data.user?.id);
+
+            // fetch settings
+            fetchSettings();
           }
         }}
       />
