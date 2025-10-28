@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Modal } from "react-native";
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
@@ -9,7 +9,7 @@ import SwitchOptionItem from '../../components/SwitchOptionItem';
 import LoginPopup from '../../components/LoginPopup';
 import { StorageKeys } from '../../constants/storage_keys';
 import StorageService from '../../services/StorageService';
-import { getSettings } from '../../services/api_services/SettingsService';
+import { getSettings, updateSettings } from '../../services/api_services/SettingsService';
 
 type SettingsRouteParams = {
   settings: {
@@ -31,6 +31,8 @@ const SettingsScreen: React.FC = () => {
   const [isQualifying, setIsQualifying] = useState(false);
 
   const [authToken, setAuthToken] = useState<string | null>(null);
+
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     const checkAuthToken = async () => {
@@ -56,8 +58,62 @@ const SettingsScreen: React.FC = () => {
       setIsPetitionBatchUpdate(settings?.PetitionBatchUpdate || false);
       setIsQualifying(settings?.Qualifying || false);
 
-    } catch (error) {
-      console.error('Failed to fetch settings:', error);
+    } catch (error: any) {
+      if (error?.status === 401 || error?.status === 403) {
+        Alert.alert('Session expired', error.message || 'Please login again.');
+        await resetAuthAndSwitches({ promptLogin: true });
+        return;
+      } else {
+        Alert.alert('Settings', error?.message || 'Failed to fetch settings. Please try again later.');
+        return;
+      }
+    }
+  };
+
+  // Handler for updating settings
+  const updateSingleSetting = async (
+    key: 'FinanceReport' | 'ImportantElectionDates' | 'MiscInformation' | 'PetitionBatchUpdate' | 'Qualifying',
+    val: boolean
+  ) => {
+    if (!authToken) { setShowLoginPopup(true); return; }
+    setUpdating(true);
+    try {
+      const settings = await updateSettings({ [key]: val });
+      console.log('Update settings response:', settings);
+  
+      // update the matching state only on success
+      setIsFinanceReport(settings.data?.FinanceReport || false);
+      setIsImportantElectionDates(settings.data?.ImportantElectionDates || false);
+      setIsMiscellaneousInfo(settings.data?.MiscInformation || false);
+      setIsPetitionBatchUpdate(settings.data?.PetitionBatchUpdate || false);
+      setIsQualifying(settings.data?.Qualifying || false);
+
+    } catch (e: any) {
+      if (e?.status === 401 || e?.status === 403) {
+        console.log('Session expired:', e);
+        await resetAuthAndSwitches({ promptLogin: true });
+        return;
+      }
+      console.error('Failed to update settings:', e);
+    } finally {
+      setUpdating(false);
+    }
+  };
+  
+
+  const resetAuthAndSwitches = async (options?: { promptLogin?: boolean }) => {
+    await StorageService.removeItem(StorageKeys.authToken);
+    setAuthToken(null);
+
+    // reset switches
+    setIsFinanceReport(false);
+    setIsImportantElectionDates(false);
+    setIsMiscellaneousInfo(false);
+    setIsPetitionBatchUpdate(false);
+    setIsQualifying(false);
+
+    if (options?.promptLogin) {
+      setShowLoginPopup(true);
     }
   };
 
@@ -74,15 +130,7 @@ const SettingsScreen: React.FC = () => {
         {
           text: "Yes",
           onPress: async () => {
-            await StorageService.removeItem(StorageKeys.authToken);
-            setAuthToken(null);
-
-            // reset switches
-            setIsFinanceReport(false);
-            setIsImportantElectionDates(false);
-            setIsMiscellaneousInfo(false);
-            setIsPetitionBatchUpdate(false);
-            setIsQualifying(false);
+            await resetAuthAndSwitches();
           }
         }
       ]
@@ -94,11 +142,32 @@ const SettingsScreen: React.FC = () => {
       <AppBar title={title} />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <SwitchOptionItem title="Finance Report" value={isFinanceReport} onValueChange={(val) => authToken ? setIsFinanceReport(val) : setShowLoginPopup(true)} />
-        <SwitchOptionItem title="Important Election Dates" value={isImportantElectionDates} onValueChange={(val) => authToken ? setIsImportantElectionDates(val) : setShowLoginPopup(true)} />
-        <SwitchOptionItem title="Miscellaneous Information" value={isMiscellaneousInfo} onValueChange={(val) => authToken ? setIsMiscellaneousInfo(val) : setShowLoginPopup(true)} />
-        <SwitchOptionItem title="Petition Batch Update" value={isPetitionBatchUpdate} onValueChange={(val) => authToken ? setIsPetitionBatchUpdate(val) : setShowLoginPopup(true)} />
-        <SwitchOptionItem title="Qualifying" value={isQualifying} onValueChange={(val) => authToken ? setIsQualifying(val) : setShowLoginPopup(true)} />
+        <SwitchOptionItem
+          title="Finance Report"
+          value={isFinanceReport}
+          onValueChange={(val) => updateSingleSetting('FinanceReport', val)}
+       />
+
+        <SwitchOptionItem
+          title="Important Election Dates"
+          value={isImportantElectionDates}
+          onValueChange={(val) => updateSingleSetting('ImportantElectionDates', val)} />
+
+        <SwitchOptionItem
+          title="Miscellaneous Information"
+          value={isMiscellaneousInfo}
+          onValueChange={(val) => updateSingleSetting('MiscInformation', val)} />
+
+        <SwitchOptionItem
+          title="Petition Batch Update"
+          value={isPetitionBatchUpdate}
+          onValueChange={(val) => updateSingleSetting('PetitionBatchUpdate', val)} />
+
+        <SwitchOptionItem
+          title="Qualifying"
+          value={isQualifying}
+          onValueChange={(val) => updateSingleSetting('Qualifying', val)} />
+
         {authToken
           ? renderSettingsItem("Logout", handleLogout)
           : renderSettingsItem("Login", () => setShowLoginPopup(true))
@@ -123,6 +192,17 @@ const SettingsScreen: React.FC = () => {
           }
         }}
       />
+
+      <Modal transparent visible={updating} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: '#0008', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 12, alignItems: 'center', minWidth: 200 }}>
+            <ActivityIndicator size="large" color={Colors.light.primary} />
+            <Text style={{ marginTop: 12, color: Colors.light.text, fontFamily: 'MyriadPro-Regular' }}>
+              Updating settings...
+            </Text>
+          </View>
+        </View>
+      </Modal>
 
     </SafeAreaView>
 
