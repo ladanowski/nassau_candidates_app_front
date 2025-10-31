@@ -52,10 +52,10 @@ const SettingsScreen: React.FC = () => {
   const fetchSettings = async () => {
     try {
       const settings = await getSettings();
-      setIsFinanceReport(settings?.FinanceReport || false);
-      setIsImportantElectionDates(settings?.ImportantElectionDates || false);
-      setIsMiscellaneousInfo(settings?.MiscInformation || false);
-      setIsPetitionBatchUpdate(settings?.PetitionBatchUpdate || false);
+      setIsFinanceReport(settings?.CampaignFinance || false);
+      setIsImportantElectionDates(settings?.ElectionInformation || false);
+      setIsMiscellaneousInfo(settings?.Misc || false);
+      setIsPetitionBatchUpdate(settings?.Petitions || false);
       setIsQualifying(settings?.Qualifying || false);
 
     } catch (error: any) {
@@ -72,7 +72,7 @@ const SettingsScreen: React.FC = () => {
 
   // Handler for updating settings
   const updateSingleSetting = async (
-    key: 'FinanceReport' | 'ImportantElectionDates' | 'MiscInformation' | 'PetitionBatchUpdate' | 'Qualifying',
+    key: 'CampaignFinance' | 'ElectionInformation' | 'Misc' | 'Petitions' | 'Qualifying',
     val: boolean
   ) => {
     if (!authToken) { setShowLoginPopup(true); return; }
@@ -82,10 +82,10 @@ const SettingsScreen: React.FC = () => {
       console.log('Update settings response:', settings);
   
       // update the matching state only on success
-      setIsFinanceReport(settings.data?.FinanceReport || false);
-      setIsImportantElectionDates(settings.data?.ImportantElectionDates || false);
-      setIsMiscellaneousInfo(settings.data?.MiscInformation || false);
-      setIsPetitionBatchUpdate(settings.data?.PetitionBatchUpdate || false);
+      setIsFinanceReport(settings.data?.CampaignFinance || false);
+      setIsImportantElectionDates(settings.data?.ElectionInformation || false);
+      setIsMiscellaneousInfo(settings.data?.Misc || false);
+      setIsPetitionBatchUpdate(settings.data?.Petitions || false);
       setIsQualifying(settings.data?.Qualifying || false);
 
     } catch (e: any) {
@@ -145,23 +145,23 @@ const SettingsScreen: React.FC = () => {
         <SwitchOptionItem
           title="Finance Report"
           value={isFinanceReport}
-          onValueChange={(val) => updateSingleSetting('FinanceReport', val)}
+          onValueChange={(val) => updateSingleSetting('CampaignFinance', val)}
        />
 
         <SwitchOptionItem
           title="Important Election Dates"
           value={isImportantElectionDates}
-          onValueChange={(val) => updateSingleSetting('ImportantElectionDates', val)} />
+          onValueChange={(val) => updateSingleSetting('ElectionInformation', val)} />
 
         <SwitchOptionItem
           title="Miscellaneous Information"
           value={isMiscellaneousInfo}
-          onValueChange={(val) => updateSingleSetting('MiscInformation', val)} />
+          onValueChange={(val) => updateSingleSetting('Misc', val)} />
 
         <SwitchOptionItem
           title="Petition Batch Update"
           value={isPetitionBatchUpdate}
-          onValueChange={(val) => updateSingleSetting('PetitionBatchUpdate', val)} />
+          onValueChange={(val) => updateSingleSetting('Petitions', val)} />
 
         <SwitchOptionItem
           title="Qualifying"

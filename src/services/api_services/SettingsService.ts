@@ -3,10 +3,10 @@ import { ApiClient } from './ApiClient';
 import { Endpoints } from '../../config/api';
 
 type SettingsPayload = {
-  FinanceReport: boolean;
-  ImportantElectionDates: boolean;
-  MiscInformation: boolean;
-  PetitionBatchUpdate: boolean;
+  CampaignFinance: boolean;
+  ElectionInformation: boolean;
+  Misc: boolean;
+  Petitions: boolean;
   Qualifying: boolean;
 };
 
@@ -22,10 +22,10 @@ export async function getSettings(): Promise<SettingsPayload | null> {
 }
 
 export type UpdateSettingsRequest = {
-    FinanceReport: boolean;
-    ImportantElectionDates: boolean;
-    MiscInformation: boolean;
-    PetitionBatchUpdate: boolean;
+    CampaignFinance: boolean;
+    ElectionInformation: boolean;
+    Misc: boolean;
+    Petitions: boolean;
     Qualifying: boolean;
   };
 

@@ -195,7 +195,7 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSucces
 
                                     <Button title={isLoading ? 'Signing In...' : 'Sign In'} onPress={handleLogin} />
 
-                                    <TouchableOpacity
+                                    {/* <TouchableOpacity
                                         activeOpacity={0.7}
                                         style={styles.forgotPassword}
                                         onPress={() => {
@@ -206,7 +206,7 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSucces
                                         <Text style={styles.forgotPasswordText}>
                                             Forgot Password?
                                         </Text>
-                                    </TouchableOpacity>
+                                    </TouchableOpacity> */}
                                 </View>
 
                                 <Text style={styles.footnote}>

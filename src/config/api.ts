@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://192.168.14.89:3002';
+export const API_BASE_URL = 'https://nassautestingapi-d6gzgzhzamhthuar.eastus-01.azurewebsites.net';
 
 export const Endpoints = {
     loginCandidate: '/api/auth/LoginCandidate',
