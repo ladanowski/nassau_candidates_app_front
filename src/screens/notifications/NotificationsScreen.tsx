@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
 import { Colors } from '../../constants/colors';
+import { getNotifications } from '../../services/api_services/NotificationsService';
 
 type NotificationsRouteParams = {
   notifications: {
@@ -45,29 +47,32 @@ const NotificationsScreen: React.FC = () => {
       setLoading(true);
       try {
         const limit = 10;
-        const response = await fetch(`https://jsonplaceholder.typicode.com/posts?_page=${page}&_limit=${limit}`);
-        const data = await response.json();
+        const response = await getNotifications(page, limit);
 
-        if (data.length < limit) setHasMore(false);
+        if (response.success) {
+          const data = response.data || [];
+          if (data.length < limit) setHasMore(false);
 
-        const formattedData: Notification[] = data.map((item: any, index: number) => ({
-          id: item.id.toString(),
-          title: item.title,
-          message: item.body,
-          dateTime: new Date(Date.now() - (page * 10 + index) * 60 * 1000).toISOString(),
-          isRead: false,
-          type: item.id % 4 === 0
-            ? 'info'
-            : item.id % 4 === 1
-              ? 'success'
-              : item.id % 4 === 2
-                ? 'warning'
-                : 'error',
-        }));
+          const formattedData: Notification[] = data.map((item: any, index: number) => ({
+            id: item.ID.toString(),
+            title: item.Subject,
+            message: item.Message,
+            dateTime: item.dtTimeSent,
+            isRead: true,
+            // type: item.ID % 4 === 0
+            //   ? 'info'
+            //   : item.id % 4 === 1
+            //     ? 'success'
+            //     : item.id % 4 === 2
+            //       ? 'warning'
+            //       : 'error',
+          }));
 
-        setNotifications(prev => [...prev, ...formattedData]);
-      } catch (error) {
+          setNotifications(prev => [...prev, ...formattedData]);
+        }
+      } catch (error: any) {
         console.error('Failed to fetch notifications:', error);
+        Alert.alert('Notifications', error.message || 'Network error. Please check your connection and try again.');
       } finally {
         setLoading(false);
       }
@@ -170,12 +175,23 @@ const NotificationsScreen: React.FC = () => {
         data={notifications}
         renderItem={renderNotificationItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[
+          styles.listContainer,
+          notifications.length === 0 && { flex: 1, justifyContent: 'center' },
+        ]}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
+        ListEmptyComponent={() => {
+          if (loading) return null;
+          return (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No notifications available.</Text>
+            </View>
+          );
+        }}
       />
     </SafeAreaView>
   );
@@ -258,6 +274,19 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 8,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: Colors.light.text,
+    opacity: 0.6,
+    fontFamily: 'MyriadPro-Regular',
   },
 });
 

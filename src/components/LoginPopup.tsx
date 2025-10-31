@@ -64,18 +64,6 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSucces
         setIsLoading(true);
 
         try {
-            // Make API call to login endpoint
-            // const response = await fetch('http://192.168.14.89:3002/api/auth/LoginCandidate', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //     },
-            //     body: JSON.stringify({
-            //         email: email.trim(),
-            //         password: password,
-            //     }),
-            // });
-
             const fcmToken = await StorageService.getItem<string>(StorageKeys.fcmToken);
 
             const data = await loginCandidate(email.trim(), password, fcmToken);
@@ -98,9 +86,9 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSucces
             } else {
                 Alert.alert('Error', data.message || 'Login failed. Please check your credentials.');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Login API error:', error);
-            Alert.alert('Error', 'Network error. Please check your connection and try again.');
+            Alert.alert('Login', error.message || 'Network error. Please check your connection and try again.');
         } finally {
             setIsLoading(false);
         }

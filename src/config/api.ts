@@ -4,6 +4,8 @@ export const Endpoints = {
     loginCandidate: '/api/auth/LoginCandidate',
     petitionQueue: '/api/selectPetitionQueue',
     settings: '/api/settings',
+    notifications: '/api/notifications',
+    logout: '/api/auth/LogoutCandidate',
 }
 
 export const RequestConfig = {

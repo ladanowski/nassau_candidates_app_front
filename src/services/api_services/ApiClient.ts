@@ -55,7 +55,7 @@ async function request<T>(path: string, init?: RequestInit & { bodyObj?: any }):
     const serverMsg = (data && ((data as any).message || (data as any).error)) as string | undefined;
     if (res.status === 401 || res.status === 403) {
       // normalize token errors
-      throw new ApiError('Session expired. Please login again.', res.status, data);
+      throw new ApiError(serverMsg || 'Session expired. Please login again.', res.status, data);
     }
     throw new ApiError(serverMsg || `HTTP ${res.status}`, res.status, data);
   }
