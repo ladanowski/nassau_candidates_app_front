@@ -9,5 +9,5 @@ export const Endpoints = {
 }
 
 export const RequestConfig = {
-    timeoutMs: 15000,
+    timeoutMs: 60000,
   };

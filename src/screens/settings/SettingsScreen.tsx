@@ -103,6 +103,7 @@ const SettingsScreen: React.FC = () => {
 
   const resetAuthAndSwitches = async (options?: { promptLogin?: boolean }) => {
     await StorageService.removeItem(StorageKeys.authToken);
+    await StorageService.removeItem(StorageKeys.candidateId);
     setAuthToken(null);
 
     // reset switches

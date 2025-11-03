@@ -54,6 +54,8 @@ async function request<T>(path: string, init?: RequestInit & { bodyObj?: any }):
   if (!res.ok) {
     const serverMsg = (data && ((data as any).message || (data as any).error)) as string | undefined;
     if (res.status === 401 || res.status === 403) {
+       await StorageService.removeItem(StorageKeys.authToken);
+       await StorageService.removeItem(StorageKeys.candidateId);
       // normalize token errors
       throw new ApiError(serverMsg || 'Session expired. Please login again.', res.status, data);
     }

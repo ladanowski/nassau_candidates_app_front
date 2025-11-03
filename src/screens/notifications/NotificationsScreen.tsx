@@ -72,6 +72,7 @@ const NotificationsScreen: React.FC = () => {
         }
       } catch (error: any) {
         console.error('Failed to fetch notifications:', error);
+        navigation.goBack();
         Alert.alert('Notifications', error.message || 'Network error. Please check your connection and try again.');
       } finally {
         setLoading(false);
