@@ -58,7 +58,7 @@ const NotificationsScreen: React.FC = () => {
             title: item.Subject,
             message: item.Message,
             dateTime: item.dtTimeSent,
-            isRead: false,
+            isRead: item.read == null ? false : item.read,
             // type: item.ID % 4 === 0
             //   ? 'info'
             //   : item.id % 4 === 1

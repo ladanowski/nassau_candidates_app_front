@@ -91,4 +91,6 @@ export const ApiClient = {
     request<T>(path, { method: 'GET', headers }),
   post: <T>(path: string, bodyObj?: any, headers?: Record<string, string>) =>
     request<T>(path, { method: 'POST', headers, bodyObj }),
+  patch: <T>(path: string, bodyObj?: any, headers?: Record<string, string>) =>
+    request<T>(path, { method: 'PATCH', headers, bodyObj }),
 };

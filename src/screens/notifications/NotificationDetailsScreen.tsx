@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     SafeAreaView,
     View,
@@ -10,6 +10,9 @@ import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
 import { Colors } from '../../constants/colors';
+import StorageService from '../../services/StorageService';
+import { StorageKeys } from '../../constants/storage_keys';
+import { markNotificationAsRead } from '../../services/api_services/NotificationsService';
 
 interface Notification {
     id: string;
@@ -29,6 +32,8 @@ type NotificationDetailsRouteParams = {
 const NotificationDetailsScreen: React.FC = () => {
     const route = useRoute<RouteProp<NotificationDetailsRouteParams, 'notificationDetails'>>();
     const { notification } = route.params;
+
+    const [authToken, setAuthToken] = useState<string | null>(null);
 
     const formatFullDateTime = (dateTime: string): string => {
         const date = new Date(dateTime);
@@ -84,6 +89,20 @@ const NotificationDetailsScreen: React.FC = () => {
     //       console.log('Navigate to:', notification.actionUrl);
     //     }
     //   };
+
+    useEffect(() => {
+        const checkAuthToken = async () => {
+          const token = await StorageService.getItem<string>(StorageKeys.authToken);
+          setAuthToken(token);
+        };
+    
+        checkAuthToken();
+      }, []);
+
+    useEffect(() => {
+        if (!authToken || notification.isRead) return;
+        markNotificationAsRead(notification.id);
+      }, [authToken]);
 
     return (
         <SafeAreaView style={globalStyles.safeAreaContainer}>
