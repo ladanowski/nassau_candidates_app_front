@@ -16,7 +16,7 @@ import {
 import { Colors } from '../constants/colors';
 import { globalStyles } from '../styles/globalStyles';
 import Button from './Button';
-import { images } from '../constants/images';
+import { images, svgs } from '../constants/images';
 import { loginCandidate } from '../services/api_services/AuthService';
 import StorageService from '../services/StorageService';
 import { StorageKeys } from '../constants/storage_keys';
@@ -38,6 +38,7 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSucces
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+    const [showPassword, setShowPassword] = useState(false);
 
     const validateForm = (): boolean => {
         const newErrors: { email?: string; password?: string } = {};
@@ -162,19 +163,28 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSucces
 
                                     <View style={styles.inputContainer}>
                                         <Text style={styles.label}>Password</Text>
-                                        <TextInput
-                                            style={[
-                                                styles.input,
-                                                errors.password && styles.inputError
-                                            ]}
-                                            placeholder="Enter your password"
-                                            placeholderTextColor={Colors.light.text + '80'}
-                                            value={password}
-                                            onChangeText={setPassword}
-                                            secureTextEntry={true}
-                                            autoCapitalize="none"
-                                            autoCorrect={false}
-                                        />
+                                        <View style={styles.passwordInputWrapper}>
+                                            <TextInput
+                                                style={[
+                                                    styles.input,
+                                                    errors.password && styles.inputError
+                                                ]}
+                                                placeholder="Enter your password"
+                                                placeholderTextColor={Colors.light.text + '80'}
+                                                value={password}
+                                                onChangeText={setPassword}
+                                                secureTextEntry={!showPassword}
+                                                autoCapitalize="none"
+                                                autoCorrect={false}
+                                            />
+                                            <TouchableOpacity
+                                                activeOpacity={0.7}
+                                                onPress={() => setShowPassword(prev => !prev)}
+                                                style={styles.eyeToggle}
+                                            >
+                                                {showPassword ? <svgs.eye width={20} height={20} color={Colors.light.text} /> : <svgs.eyeOff width={20} height={20} color={Colors.light.text} />}
+                                            </TouchableOpacity>
+                                        </View>
                                         {errors.password && (
                                             <Text style={styles.errorText}>{errors.password}</Text>
                                         )}
@@ -305,6 +315,18 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginTop: 15,
         lineHeight: 16,
+    },
+    passwordInputWrapper: {
+        position: 'relative',
+        justifyContent: 'center',
+    },
+    eyeToggle: {
+        position: 'absolute',
+        right: 12,
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingLeft: 8,
     },
 });
 

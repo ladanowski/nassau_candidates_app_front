@@ -18,6 +18,8 @@ import OptionNotifications from '../../assets/svgs/option_notifications.svg';
 import OptionAppointmentSchedule from '../../assets/svgs/option_schedule_appointment.svg';
 import TimerBackground from '../../assets/svgs/timer_background.svg';
 import NassauCountry from '../../assets/svgs/nassau_country.svg';
+import Eye from '../../assets/svgs/eye.svg';
+import EyeOff from '../../assets/svgs/eye_off.svg';
 import BannerHeader from '../../assets/images/bannerHeader.png';
 import Logo from '../../assets/images/logo.png';
 
@@ -48,5 +50,7 @@ export const svgs = {
   optionAppointmentSchedule: OptionAppointmentSchedule,
   timerBackground: TimerBackground,
   nassauCountry: NassauCountry,
+  eye: Eye,
+  eyeOff: EyeOff,
 };
 
