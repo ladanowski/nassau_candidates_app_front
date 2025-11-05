@@ -13,6 +13,7 @@ import {
     Dimensions,
     Image,
 } from 'react-native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Colors } from '../constants/colors';
 import { globalStyles } from '../styles/globalStyles';
 import Button from './Button';
@@ -20,20 +21,23 @@ import { images, svgs } from '../constants/images';
 import { loginCandidate } from '../services/api_services/AuthService';
 import StorageService from '../services/StorageService';
 import { StorageKeys } from '../constants/storage_keys';
+import { FORGOT_PASSWORD_URL } from '../config/api';
 
 const { width } = Dimensions.get("window");
 
 interface LoginPopupProps {
     visible: boolean;
     onClose: () => void;
-    onLoginSuccess?: (data: { 
+    onLoginSuccess?: (data: {
         email: string;
-        user?: any; 
-        token?: string; 
+        user?: any;
+        token?: string;
     }) => void;
 }
 
 const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSuccess }) => {
+    const navigation = useNavigation<NavigationProp<any>>();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -72,10 +76,10 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSucces
             if (data.success && data.token) {
                 // Call the onLoginSuccess callback with the API response data
                 if (onLoginSuccess) {
-                    onLoginSuccess({ 
+                    onLoginSuccess({
                         email,
-                        user: data.user, 
-                        token: data.token 
+                        user: data.user,
+                        token: data.token
                     });
                 }
 
@@ -193,18 +197,22 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ visible, onClose, onLoginSucces
 
                                     <Button title={isLoading ? 'Signing In...' : 'Sign In'} onPress={handleLogin} />
 
-                                    {/* <TouchableOpacity
+                                    <TouchableOpacity
                                         activeOpacity={0.7}
                                         style={styles.forgotPassword}
                                         onPress={() => {
-                                            // Handle forgot password
-                                            Alert.alert('Forgot Password', 'Password reset functionality will be implemented here.');
+                                            //Route to forgot password URL
+                                            handleClose();
+                                            navigation.navigate('webView', {
+                                                title: 'Forgot Password',
+                                                link: FORGOT_PASSWORD_URL,
+                                            });
                                         }}
                                     >
                                         <Text style={styles.forgotPasswordText}>
                                             Forgot Password?
                                         </Text>
-                                    </TouchableOpacity> */}
+                                    </TouchableOpacity>
                                 </View>
 
                                 <Text style={styles.footnote}>
