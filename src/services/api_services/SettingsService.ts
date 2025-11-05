@@ -30,8 +30,5 @@ export type UpdateSettingsRequest = {
   };
 
   export async function updateSettings(body: Partial<UpdateSettingsRequest>): Promise<SettingsResponse> {
-    console.warn('Updating settings:', body);
-    const res = await ApiClient.post<SettingsResponse>(Endpoints.settings, body);
-    console.warn('Settings updated:', res);
-    return res;
+    return await ApiClient.post<SettingsResponse>(Endpoints.settings, body);
   }

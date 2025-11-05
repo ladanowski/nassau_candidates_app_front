@@ -13,6 +13,5 @@ export async function loginCandidate(email: string, password: string, fcmToken?:
   if (fcmToken) {
     body.fcmToken = fcmToken;
   }
-  console.warn('Login Request Body', body)
   return ApiClient.post<LoginResponse>(Endpoints.loginCandidate, body);
 }

@@ -31,18 +31,30 @@ async function getAuthToken(): Promise<string | undefined> {
   }
 }
 
+
 async function request<T>(path: string, init?: RequestInit & { bodyObj?: any }): Promise<T> {
   const token = await getAuthToken();
+  const method = init?.method || 'GET';
+  const fullUrl = `${API_BASE_URL}${path}`;
+  const body = init?.bodyObj ? JSON.stringify(init.bodyObj) : init?.body;
+
+  console.log('🔵 API Request:', {
+    method,
+    url: fullUrl,
+    body: init?.bodyObj || (typeof body === 'string' ? JSON.parse(body) : body),
+    hasAuth: !!token,
+  });
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(init?.headers as Record<string, string> | undefined),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const fetchPromise = fetch(`${API_BASE_URL}${path}`, {
+  const fetchPromise = fetch(fullUrl, {
     ...init,
     headers,
-    body: init?.bodyObj ? JSON.stringify(init.bodyObj) : init?.body,
+    body,
   });
 
   const res = await withTimeout(fetchPromise, RequestConfig.timeoutMs);
@@ -51,11 +63,20 @@ async function request<T>(path: string, init?: RequestInit & { bodyObj?: any }):
   let data: any = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
 
+  console.log('🟢 API Response:', {
+    method,
+    url: fullUrl,
+    status: res.status,
+    statusText: res.statusText,
+    data: data,
+  });
+
   if (!res.ok) {
     const serverMsg = (data && ((data as any).message || (data as any).error)) as string | undefined;
     if (res.status === 401 || res.status === 403) {
-       await StorageService.removeItem(StorageKeys.authToken);
-       await StorageService.removeItem(StorageKeys.candidateId);
+      console.log('🔴 Authentication Error - Logging out user');
+      await StorageService.removeItem(StorageKeys.authToken);
+      await StorageService.removeItem(StorageKeys.candidateId);
       // normalize token errors
       throw new ApiError(serverMsg || 'Session expired. Please login again.', res.status, data);
     }
@@ -63,6 +84,7 @@ async function request<T>(path: string, init?: RequestInit & { bodyObj?: any }):
   }
   return data as T;
 }
+
 
 export const ApiClient = {
   get: <T>(path: string, headers?: Record<string, string>) =>

@@ -10,6 +10,7 @@ import LoginPopup from '../../components/LoginPopup';
 import { StorageKeys } from '../../constants/storage_keys';
 import StorageService from '../../services/StorageService';
 import { getSettings, updateSettings } from '../../services/api_services/SettingsService';
+import { logoutCandidate } from '../../services/api_services/LogoutService';
 
 type SettingsRouteParams = {
   settings: {
@@ -131,6 +132,8 @@ const SettingsScreen: React.FC = () => {
         {
           text: "Yes",
           onPress: async () => {
+            const data = await logoutCandidate();
+            
             await resetAuthAndSwitches();
           }
         }
