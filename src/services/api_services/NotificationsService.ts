@@ -12,5 +12,5 @@ type NotificationResponse = {
 
 export async function getNotifications(page: number, limit: number = 10): Promise<NotificationResponse> {
  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-  return ApiClient.post<NotificationResponse>(`${Endpoints.notifications}?${params.toString()}`);
+  return ApiClient.get<NotificationResponse>(`${Endpoints.notifications}?${params.toString()}`);
 }
