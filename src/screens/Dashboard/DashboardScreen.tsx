@@ -294,7 +294,11 @@ const styles = StyleSheet.create({
   },
   unreadNotificationsCountText: {
     color: '#FFFFFF',
-    fontSize: 8,
+    fontSize: 10,
     fontFamily: 'MyriadPro-Bold',
+    textAlign: 'center',
+    lineHeight: 18,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   }
 });
