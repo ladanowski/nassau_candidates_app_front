@@ -15,6 +15,11 @@ type UpdateNotificationResponse = {
   message?: string;
 };
 
+type UnreadNotificationsCountResponse = {
+  success: boolean;
+  unreadCount?: number;
+};
+
 export async function getNotifications(page: number, limit: number = 10): Promise<NotificationResponse> {
  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   return ApiClient.get<NotificationResponse>(`${Endpoints.notifications}?${params.toString()}`);
@@ -24,3 +29,7 @@ export async function markNotificationAsRead(notificationId: string, isRead: boo
   const body: Record<string, any> = { notificationId, isRead };
   return ApiClient.patch<UpdateNotificationResponse>(Endpoints.notificationRead, body);
 }
+
+export async function getUnreadNotificationsCount(): Promise<UnreadNotificationsCountResponse> {
+   return ApiClient.get<UnreadNotificationsCountResponse>(Endpoints.notificationUnreadCount);
+ }

@@ -7,6 +7,7 @@ export const Endpoints = {
     settings: '/api/settings',
     notifications: '/api/notifications',
     notificationRead: '/api/notifications/mark-read',
+    notificationUnreadCount: '/api/notifications/unread-count',
     logout: '/api/auth/LogoutCandidate',
 }
 

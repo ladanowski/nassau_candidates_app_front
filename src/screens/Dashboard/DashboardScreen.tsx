@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, FlatList, Dimensions, ActivityIndicator } from 'react-native';
 import BannerHeader from '../../components/BannerHeader';
 import { Colors } from '../../constants/colors';
 import { svgs } from '../../constants/images';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import Footer from '../../components/Footer';
 import { globalStyles } from '../../styles/globalStyles';
 import CountdownTimer from './CountdownTimer';
@@ -12,6 +12,7 @@ import TermsPopup from '../../components/terms_popup';
 import { StorageKeys } from '../../constants/storage_keys';
 import StorageService from '../../services/StorageService';
 import LoginPopup from '../../components/LoginPopup';
+import { getUnreadNotificationsCount } from '../../services/api_services/NotificationsService';
 
 const gridItems = [
   { key: 'Announced Candidates', icon: svgs.optionAnnouncedCandidate, url: 'https://www.votenassaufl.gov/announced-candidates-and-committees', label: 'Announced Candidates' },
@@ -42,6 +43,11 @@ const DashboardScreen: React.FC = () => {
   const [showTermsPopup, setShowTermsPopup] = useState(false);
 
   const [showLoginPopup, setShowLoginPopup] = useState(false);
+
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
 
   useEffect(() => {
     const fetchCountdownDates = async () => {
@@ -78,6 +84,21 @@ const DashboardScreen: React.FC = () => {
     checkFirstLaunch();
 
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const checkAuthToken = async () => {
+        const token = await StorageService.getItem<string>(StorageKeys.authToken);
+        setAuthToken(token);
+        if (token) {
+          const unreadNotificationsCount = await getUnreadNotificationsCount();
+          setUnreadNotifications(unreadNotificationsCount.unreadCount || 0);
+        }
+      };
+
+      checkAuthToken();
+    }, [])
+  );
 
 
   const renderGridItem = ({ item }: any) => (
@@ -123,20 +144,22 @@ const DashboardScreen: React.FC = () => {
       <View style={styles.container}>
         <View style={{ width: '100%', alignItems: 'center', backgroundColor: '#F2F2F2', padding: 12, flexDirection: 'row', justifyContent: 'center', }}>
           <Text style={{ fontSize: 16, color: Colors.light.secondary, fontFamily: 'MyriadPro-Bold', fontStyle: 'italic', }}>— A Public Office is a Public Trust —</Text>
-          {/* <TouchableOpacity onPress={() => navigation.navigate('notifications')}>
-            <View style={{
-              marginLeft: 16,
-              // width: 24,
-              // height: 24,
-              borderRadius: 50,
-              padding: 6,
-              backgroundColor: Colors.light.primary,
-              justifyContent: 'center',
-              alignItems: 'center',
+          {authToken && unreadNotifications > 0 && (
+            <TouchableOpacity onPress={() => {
+              navigation.navigate('notifications', {
+                title: 'Notifications',
+              });
             }}>
-              <svgs.bellIcon width={18} height={18}/>
-            </View>
-          </TouchableOpacity> */}
+              <View style={styles.unreadNotificationsContainer}>
+                <svgs.bellIcon width={18} height={18}/>
+                <View style={styles.unreadNotificationsCountContainer}>
+                  <Text style={styles.unreadNotificationsCountText}>
+                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
         <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors.light.primary, }} showsVerticalScrollIndicator={false}>
           <View style={{ position: 'relative', width: '100%', flex: 1 }}>
@@ -205,6 +228,7 @@ const DashboardScreen: React.FC = () => {
             // Store the actual token from API response
             await StorageService.saveItem(StorageKeys.authToken, data.token);
             await StorageService.saveItem(StorageKeys.candidateId, data.user?.id);
+            setAuthToken(data.token);
           }
         }}
       />
@@ -245,4 +269,32 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 15,
   },
+  unreadNotificationsContainer: {
+    marginLeft: 16,
+    // width: 24,
+    // height: 24,
+    borderRadius: 50,
+    padding: 6,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  unreadNotificationsCountContainer: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    backgroundColor: Colors.light.secondary,
+    borderRadius: 50,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  unreadNotificationsCountText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    fontFamily: 'MyriadPro-Bold',
+  }
 });
