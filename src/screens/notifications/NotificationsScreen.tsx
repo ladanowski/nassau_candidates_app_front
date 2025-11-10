@@ -14,6 +14,7 @@ import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
 import { Colors } from '../../constants/colors';
 import { getNotifications } from '../../services/api_services/NotificationsService';
+import PushNotificationIOS from '@react-native-community/push-notification-ios';
 
 type NotificationsRouteParams = {
   notifications: {
@@ -46,6 +47,8 @@ const NotificationsScreen: React.FC = () => {
 
       setLoading(true);
       try {
+        PushNotificationIOS.setApplicationIconBadgeNumber(0);
+
         const limit = 10;
         const response = await getNotifications(page, limit);
 

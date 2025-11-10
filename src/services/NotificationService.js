@@ -54,6 +54,8 @@ class NotificationService {
                     soundName: 'default',
                     importance: 4,
                     vibrate: true,
+                    badge: true,
+
                 },
                 (created) => console.log(`createChannel returned '${created}'`)
             );
@@ -66,8 +68,9 @@ class NotificationService {
                     channelDescription: 'High priority notifications',
                     playSound: true,
                     soundName: 'default',
-                    importance: 5,
+                    importance: 4,
                     vibrate: true,
+                    badge: true,
                 },
                 (created) => console.log(`High priority channel created: '${created}'`)
             );
@@ -113,8 +116,8 @@ class NotificationService {
         PushNotification.getScheduledLocalNotifications(callback);
     };
 
-    // Method to clear badge (iOS)
-    clearBadge = () => {
+    // Method to clear badge (iOS & Android)
+    clearBadge = async () => {
         PushNotification.setApplicationIconBadgeNumber(0);
     };
 }
