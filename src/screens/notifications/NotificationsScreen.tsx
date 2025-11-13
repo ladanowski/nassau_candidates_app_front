@@ -92,9 +92,19 @@ const NotificationsScreen: React.FC = () => {
   };
 
   const formatDateTime = (dateTime: string): string => {
-    const date = new Date(dateTime);
+    // Parse date and ensure it’s interpreted as UTC if no timezone info is present
+    const date = new Date(
+      dateTime.endsWith('Z') || dateTime.includes('+')
+        ? dateTime
+        : dateTime + 'Z'
+    );
+
+    // Convert to local time zone
+    const localDate = new Date(date.getTime() + new Date().getTimezoneOffset() * -60000);
+
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffInMs = now.getTime() - localDate.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
 
     if (diffInHours < 1) {
       return 'Just now';
@@ -103,13 +113,16 @@ const NotificationsScreen: React.FC = () => {
     } else if (diffInHours < 48) {
       return 'Yesterday';
     } else {
-      return date.toLocaleDateString('en-US', {
+      return localDate.toLocaleDateString(undefined, {
         month: 'short',
         day: 'numeric',
-        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+        year: localDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+        hour: '2-digit',
+        minute: '2-digit',
       });
     }
   };
+
 
   const getTypeColor = (type: string = 'info'): string => {
     switch (type) {

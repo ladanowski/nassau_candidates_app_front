@@ -36,8 +36,17 @@ const NotificationDetailsScreen: React.FC = () => {
     const [authToken, setAuthToken] = useState<string | null>(null);
 
     const formatFullDateTime = (dateTime: string): string => {
-        const date = new Date(dateTime);
-        return date.toLocaleString('en-US', {
+        // Ensure date is treated as UTC if no timezone info exists
+        const date = new Date(
+            dateTime.endsWith('Z') || dateTime.includes('+')
+                ? dateTime
+                : dateTime + 'Z'
+        );
+
+        // Convert to the user’s local time
+        const localDate = new Date(date.getTime() + new Date().getTimezoneOffset() * -60000);
+
+        return localDate.toLocaleString(undefined, {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
@@ -46,6 +55,7 @@ const NotificationDetailsScreen: React.FC = () => {
             minute: '2-digit',
         });
     };
+
 
     const getTypeInfo = (type: string = 'info') => {
         switch (type) {
@@ -92,17 +102,17 @@ const NotificationDetailsScreen: React.FC = () => {
 
     useEffect(() => {
         const checkAuthToken = async () => {
-          const token = await StorageService.getItem<string>(StorageKeys.authToken);
-          setAuthToken(token);
+            const token = await StorageService.getItem<string>(StorageKeys.authToken);
+            setAuthToken(token);
         };
-    
+
         checkAuthToken();
-      }, []);
+    }, []);
 
     useEffect(() => {
         if (!authToken || notification.isRead) return;
         markNotificationAsRead(notification.id);
-      }, [authToken]);
+    }, [authToken]);
 
     return (
         <SafeAreaView style={globalStyles.safeAreaContainer}>
