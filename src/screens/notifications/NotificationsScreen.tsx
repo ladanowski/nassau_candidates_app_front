@@ -8,6 +8,7 @@ import {
   View,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
@@ -39,6 +40,7 @@ const NotificationsScreen: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
@@ -62,13 +64,6 @@ const NotificationsScreen: React.FC = () => {
             message: item.Message,
             dateTime: item.dtTimeSent,
             isRead: item.read == null ? false : item.read,
-            // type: item.ID % 4 === 0
-            //   ? 'info'
-            //   : item.id % 4 === 1
-            //     ? 'success'
-            //     : item.id % 4 === 2
-            //       ? 'warning'
-            //       : 'error',
           }));
 
           setNotifications(prev => [...prev, ...formattedData]);
@@ -91,15 +86,43 @@ const NotificationsScreen: React.FC = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      PushNotificationIOS.setApplicationIconBadgeNumber(0);
+
+      const limit = 10;
+      const response = await getNotifications(1, limit);
+
+      if (response.success) {
+        const data = response.data || [];
+        const formattedData: Notification[] = data.map((item: any) => ({
+          id: item.ID.toString(),
+          title: item.Subject,
+          message: item.Message,
+          dateTime: item.dtTimeSent,
+          isRead: item.read == null ? false : item.read,
+        }));
+
+        setNotifications(formattedData);
+        setPage(1);
+        setHasMore(data.length === limit);
+      }
+    } catch (error: any) {
+      console.error('Failed to refresh notifications:', error);
+      Alert.alert('Refresh Failed', error.message || 'Unable to refresh notifications.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const formatDateTime = (dateTime: string): string => {
-    // Parse date and ensure it’s interpreted as UTC if no timezone info is present
     const date = new Date(
       dateTime.endsWith('Z') || dateTime.includes('+')
         ? dateTime
         : dateTime + 'Z'
     );
 
-    // Convert to local time zone
     const localDate = new Date(date.getTime() + new Date().getTimezoneOffset() * -60000);
 
     const now = new Date();
@@ -122,7 +145,6 @@ const NotificationsScreen: React.FC = () => {
       });
     }
   };
-
 
   const getTypeColor = (type: string = 'info'): string => {
     switch (type) {
@@ -201,6 +223,13 @@ const NotificationsScreen: React.FC = () => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={Colors.light.primary}
+          />
+        }
         ListEmptyComponent={() => {
           if (loading) return null;
           return (
