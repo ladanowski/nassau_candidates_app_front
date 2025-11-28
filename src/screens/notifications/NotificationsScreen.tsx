@@ -10,6 +10,7 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
+import messaging from '@react-native-firebase/messaging';
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
@@ -42,6 +43,8 @@ const NotificationsScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+
+  const [showFloatingAlert, setShowFloatingAlert] = useState(false);
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -207,6 +210,20 @@ const NotificationsScreen: React.FC = () => {
     );
   };
 
+  useEffect(() => {
+    const foregroundNotificationListener = messaging().onMessage(async remoteMessage => {
+      console.log('Notification received in Notification screen foreground:', remoteMessage);
+
+      // Show alert to refresh notifications
+      setShowFloatingAlert(true);
+    });
+
+    return () => {
+      // This removes the listener — required!
+      foregroundNotificationListener();
+    };
+  }, []);
+
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
       <AppBar title={title} />
@@ -239,6 +256,20 @@ const NotificationsScreen: React.FC = () => {
           );
         }}
       />
+
+      {showFloatingAlert && (
+        <TouchableOpacity
+          style={styles.floatingAlertTop}
+          activeOpacity={0.8}
+          onPress={() => {
+            handleRefresh();
+            setShowFloatingAlert(false);
+          }}
+        >
+          <Text style={styles.floatingAlertTopText}>Click to Refresh</Text>
+        </TouchableOpacity>
+      )}
+
     </SafeAreaView>
   );
 };
@@ -334,6 +365,28 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     fontFamily: 'MyriadPro-Regular',
   },
+  floatingAlertTop: {
+    position: 'absolute',
+    top: 150,
+    alignSelf: 'center',
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 25,
+    zIndex: 999,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+
+  floatingAlertTopText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
 });
 
 export default NotificationsScreen;
