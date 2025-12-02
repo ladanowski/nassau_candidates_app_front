@@ -36,25 +36,19 @@ const NotificationDetailsScreen: React.FC = () => {
     const [authToken, setAuthToken] = useState<string | null>(null);
 
     const formatFullDateTime = (dateTime: string): string => {
-        // Ensure date is treated as UTC if no timezone info exists
-        const date = new Date(
-            dateTime.endsWith('Z') || dateTime.includes('+')
-                ? dateTime
-                : dateTime + 'Z'
-        );
+  // Automatically handles UTC ("Z") or timezone offsets like "+05:00"
+  const date = new Date(dateTime);
 
-        // Convert to the user’s local time
-        const localDate = new Date(date.getTime() + new Date().getTimezoneOffset() * -60000);
+  return date.toLocaleString(undefined, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
 
-        return localDate.toLocaleString(undefined, {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
 
 
     const getTypeInfo = (type: string = 'info') => {

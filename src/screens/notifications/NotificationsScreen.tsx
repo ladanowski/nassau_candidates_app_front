@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   FlatList,
   SafeAreaView,
@@ -43,19 +43,19 @@ const NotificationsScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const pageRef = useRef(1);
+  const isFetchingRef = useRef(false);
+  
+  const limit = 10;
 
-  const [showFloatingAlert, setShowFloatingAlert] = useState(false);
-
+  // Initial load - fetch page 1 on component mount
   useEffect(() => {
-    const fetchNotifications = async () => {
-      if (loading || !hasMore) return;
-
+    const fetchInitialNotifications = async () => {
       setLoading(true);
       try {
         PushNotificationIOS.setApplicationIconBadgeNumber(0);
 
-        const limit = 10;
-        const response = await getNotifications(page, limit);
+        const response = await getNotifications(1, limit);
 
         if (response.success) {
           const data = response.data || [];
@@ -69,7 +69,8 @@ const NotificationsScreen: React.FC = () => {
             isRead: item.read == null ? false : item.read,
           }));
 
-          setNotifications(prev => [...prev, ...formattedData]);
+          setNotifications(formattedData);
+          pageRef.current = 1;
         }
       } catch (error: any) {
         console.error('Failed to fetch notifications:', error);
@@ -80,21 +81,56 @@ const NotificationsScreen: React.FC = () => {
       }
     };
 
-    fetchNotifications();
-  }, [page]);
+    fetchInitialNotifications();
+  }, []);
 
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      setPage(prev => prev + 1);
+  // Fetch for pagination (page > 1)
+  const fetchMoreNotifications = async () => {
+    if (isFetchingRef.current || !hasMore) return;
+
+    isFetchingRef.current = true;
+    setLoading(true);
+    
+    try {
+      const nextPage = pageRef.current + 1;
+      const response = await getNotifications(nextPage, limit);
+
+      if (response.success) {
+        const data = response.data || [];
+        if (data.length < limit) setHasMore(false);
+
+        const formattedData: Notification[] = data.map((item: any) => ({
+          id: item.ID.toString(),
+          title: item.Subject,
+          message: item.Message,
+          dateTime: item.dtTimeSent,
+          isRead: item.read == null ? false : item.read,
+        }));
+
+        setNotifications(prev => [...prev, ...formattedData]);
+        pageRef.current = nextPage;
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch more notifications:', error);
+    } finally {
+      setLoading(false);
+      isFetchingRef.current = false;
     }
   };
 
-  const handleRefresh = async () => {
+  const handleLoadMore = () => {
+    if (!loading && !refreshing) fetchMoreNotifications();
+  };
+
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
+    pageRef.current = 1;
+    setNotifications([]);
+    setHasMore(true);
+    
     try {
       PushNotificationIOS.setApplicationIconBadgeNumber(0);
 
-      const limit = 10;
       const response = await getNotifications(1, limit);
 
       if (response.success) {
@@ -108,7 +144,6 @@ const NotificationsScreen: React.FC = () => {
         }));
 
         setNotifications(formattedData);
-        setPage(1);
         setHasMore(data.length === limit);
       }
     } catch (error: any) {
@@ -117,37 +152,38 @@ const NotificationsScreen: React.FC = () => {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, []);
 
   const formatDateTime = (dateTime: string): string => {
-    const date = new Date(
-      dateTime.endsWith('Z') || dateTime.includes('+')
-        ? dateTime
-        : dateTime + 'Z'
-    );
+  const date = new Date(dateTime); // JS automatically handles UTC → local
 
-    const localDate = new Date(date.getTime() + new Date().getTimezoneOffset() * -60000);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMinutes / 60);
 
-    const now = new Date();
-    const diffInMs = now.getTime() - localDate.getTime();
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+   if (diffInMinutes < 1) {
+    return 'Just now';
+  } else if (diffInMinutes < 60) {
+    if (diffInMinutes < 15) return `${diffInMinutes} min ago`;
+    if (diffInMinutes < 30) return '15 min ago';
+    if (diffInMinutes < 45) return '30 min ago';
+    return '45 min ago';
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  } else if (diffInHours < 48) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+};
 
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else if (diffInHours < 48) {
-      return 'Yesterday';
-    } else {
-      return localDate.toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: localDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    }
-  };
 
   const getTypeColor = (type: string = 'info'): string => {
     switch (type) {
@@ -214,15 +250,17 @@ const NotificationsScreen: React.FC = () => {
     const foregroundNotificationListener = messaging().onMessage(async remoteMessage => {
       console.log('Notification received in Notification screen foreground:', remoteMessage);
 
-      // Show alert to refresh notifications
-      setShowFloatingAlert(true);
+      // Refresh notifications after 3 seconds
+      setTimeout(() => {
+        handleRefresh();
+      }, 2000);
     });
 
     return () => {
       // This removes the listener — required!
       foregroundNotificationListener();
     };
-  }, []);
+  }, [handleRefresh]);
 
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
@@ -238,7 +276,7 @@ const NotificationsScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
+        onEndReachedThreshold={0.3}
         ListFooterComponent={renderFooter}
         refreshControl={
           <RefreshControl
@@ -248,7 +286,7 @@ const NotificationsScreen: React.FC = () => {
           />
         }
         ListEmptyComponent={() => {
-          if (loading) return null;
+          if (loading || refreshing) return null;
           return (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No notifications available.</Text>
@@ -256,19 +294,6 @@ const NotificationsScreen: React.FC = () => {
           );
         }}
       />
-
-      {showFloatingAlert && (
-        <TouchableOpacity
-          style={styles.floatingAlertTop}
-          activeOpacity={0.8}
-          onPress={() => {
-            handleRefresh();
-            setShowFloatingAlert(false);
-          }}
-        >
-          <Text style={styles.floatingAlertTopText}>Click to Refresh</Text>
-        </TouchableOpacity>
-      )}
 
     </SafeAreaView>
   );

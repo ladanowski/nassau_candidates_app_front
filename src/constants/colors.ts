@@ -5,7 +5,7 @@ export const Colors = {
     icon: '#687076',
     primary: '#0E2662',
     secondary: '#C30017',
-    unreadNotificationCard: '#F8FAFF',
+    unreadNotificationCard: '#E6F0FF',
     readNotificationCard: '#fff',
     error: '#C30017',
   },
