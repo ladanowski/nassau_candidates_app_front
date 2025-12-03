@@ -1,13 +1,32 @@
 {
   "project_info": {
-    "project_number": "645095829554",
-    "project_id": "candidate-app-addinsolutions",
-    "storage_bucket": "candidate-app-addinsolutions.firebasestorage.app"
+    "project_number": "603489441081",
+    "project_id": "nassaucandidatemsg",
+    "storage_bucket": "nassaucandidatemsg.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:645095829554:android:0247d3b28c33ba68a80c2b",
+        "mobilesdk_app_id": "1:603489441081:android:012c08b0af7256a35bc4e8",
+        "android_client_info": {
+          "package_name": "com.precinctmanager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbvtL2i4jP3NvrULi4i4JvbZt17XF4HBE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:603489441081:android:9e838219eff8e7895bc4e8",
         "android_client_info": {
           "package_name": "gov.votenassauflorida.candidate"
         }
@@ -15,7 +34,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAjlwCUMZMCKtAeT5g8FwweagMzBLJiseg"
+          "current_key": "AIzaSyBbvtL2i4jP3NvrULi4i4JvbZt17XF4HBE"
         }
       ],
       "services": {
