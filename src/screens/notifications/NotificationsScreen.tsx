@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -53,7 +54,9 @@ const NotificationsScreen: React.FC = () => {
     const fetchInitialNotifications = async () => {
       setLoading(true);
       try {
-        PushNotificationIOS.setApplicationIconBadgeNumber(0);
+        if (Platform.OS === 'ios') {
+          PushNotificationIOS.setApplicationIconBadgeNumber(0);
+        }
 
         const response = await getNotifications(1, limit);
 
@@ -129,7 +132,9 @@ const NotificationsScreen: React.FC = () => {
     setHasMore(true);
     
     try {
-      PushNotificationIOS.setApplicationIconBadgeNumber(0);
+      if (Platform.OS === 'ios') {
+        PushNotificationIOS.setApplicationIconBadgeNumber(0);
+      }
 
       const response = await getNotifications(1, limit);
 
