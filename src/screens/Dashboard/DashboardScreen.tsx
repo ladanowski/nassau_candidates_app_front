@@ -17,16 +17,16 @@ import { getUnreadNotificationsCount } from '../../services/api_services/Notific
 const gridItems = [
   { key: 'Announced Candidates', icon: svgs.optionAnnouncedCandidate, url: 'https://www.votenassaufl.gov/announced-candidates-and-committees', label: 'Announced Candidates' },
   { key: 'Campaign Finance', icon: svgs.optionCampaignFinance, url: 'https://www.votenassaufl.gov/campaign-finance-reports', label: 'Campaign Finance', requiredAuth: true },
-  { key: 'Canvassing Board Schedule', icon: svgs.optionCanvassingBoard, url: 'https://www.votenassaufl.gov/canvassing-board', label: 'Canvassing Board Schedule' },
+  { key: 'Canvassing Board', icon: svgs.optionGazel, url: 'https://www.votenassaufl.gov/canvassing-board', label: 'Canvassing Board' },
   { key: 'Contact Us', icon: svgs.optionContactUs, url: 'https://www.votenassaufl.gov/contact', label: 'Contact Us' },
-  { key: 'Election Countdown', icon: svgs.optionElectionCountdown, url: 'https://www.votenassaufl.gov/upcoming-elections', label: 'Election Countdown' },
+  { key: 'Election Dates', icon: svgs.optionCanvassingBoard, url: 'https://www.votenassaufl.gov/upcoming-elections', label: 'Election Dates' },
   { key: 'Notifications', icon: svgs.optionNotifications, url: null, routeTo: 'notifications', label: 'Notifications', requiredAuth: true },
   { key: 'Offices up for Election', icon: svgs.optionOfficeUpForElection, url: 'https://www.votenassaufl.gov/offices-up-for-election', label: 'Offices up for Election' },
   { key: 'Petition Queue', icon: svgs.optionPetitionQueue, url: null, label: 'Petition Queue', routeTo: 'petitionQueue'},
   { key: 'Polling Locations & 150’ Sign Restrictions', icon: svgs.optionPollingLocation, url: 'https://www.votenassaufl.gov/150-ft-no-solicitation-zones', label: 'Polling Locations & 150’ Sign Restrictions' },
   { key: 'Request Vote-by-Mail data', icon: svgs.optionRequestVoteByMail, url: 'https://www.votenassaufl.gov/vote-by-mail-data', label: 'Request Vote-by-Mail data', requiredAuth: true },
-  { key: 'Schedule Appointment', icon: svgs.optionAppointmentSchedule, url: 'https://www.votenassaufl.gov/qualifying-for-office', label: 'Schedule Appointment' },
-  { key: 'Settings – Notifications', icon: svgs.optionSettings, url: null, routeTo: 'settings', label: 'Settings – Notifications' },
+  { key: 'Schedule Qualifying Appt', icon: svgs.optionAppointmentSchedule, url: 'https://calendly.com/ncsoe/60min?month=2026-05', label: 'Schedule Qualifying Appt' },
+  { key: 'Settings', icon: svgs.optionSettings, url: null, routeTo: 'settings', label: 'Settings' },
 ];
 
 type CountdownItem = {
@@ -142,8 +142,8 @@ const DashboardScreen: React.FC = () => {
     <SafeAreaView style={globalStyles.safeAreaContainer}>
       <BannerHeader />
       <View style={styles.container}>
-        <View style={{ width: '100%', alignItems: 'center', backgroundColor: '#F2F2F2', padding: 12, flexDirection: 'row', justifyContent: 'center', }}>
-          <Text style={{ fontSize: 16, color: Colors.light.secondary, fontFamily: 'MyriadPro-Bold', fontStyle: 'italic', }}>— A Public Office is a Public Trust —</Text>
+        <View style={{ width: '100%', alignItems: 'center', backgroundColor: '#F2F2F2', paddingHorizontal: 12, flexDirection: 'row', justifyContent: 'center', }}>
+          <Text style={{ fontSize: 16, color: Colors.light.secondary, paddingVertical: 12, fontFamily: 'MyriadPro-Bold', fontStyle: 'italic', }}>— A Public Office is a Public Trust —</Text>
           {authToken && unreadNotifications > 0 && (
             <TouchableOpacity onPress={() => {
               navigation.navigate('notifications', {

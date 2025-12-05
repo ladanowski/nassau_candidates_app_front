@@ -15,6 +15,7 @@ import OptionRequestVoteByMail from '../../assets/svgs/option_request_vote_by_ma
 import OptionSettings from '../../assets/svgs/option_settings.svg';
 import OptionCampaignFinance from '../../assets/svgs/option_campaign_finance.svg';
 import OptionNotifications from '../../assets/svgs/option_notifications.svg';
+import OptionGazel from '../../assets/svgs/option_gazel.svg';
 import OptionAppointmentSchedule from '../../assets/svgs/option_schedule_appointment.svg';
 import TimerBackground from '../../assets/svgs/timer_background.svg';
 import NassauCountry from '../../assets/svgs/nassau_country.svg';
@@ -48,6 +49,7 @@ export const svgs = {
   optionCampaignFinance: OptionCampaignFinance,
   optionNotifications: OptionNotifications,
   optionAppointmentSchedule: OptionAppointmentSchedule,
+  optionGazel: OptionGazel,
   timerBackground: TimerBackground,
   nassauCountry: NassauCountry,
   eye: Eye,
