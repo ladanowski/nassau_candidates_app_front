@@ -16,6 +16,7 @@ import CommitteeFinanceReport from '../screens/settings/CommitteeFinanceReport';
 import ImportantElectionDates from '../screens/settings/ImportantElectionDates';
 import PetitionDueDateCounty from '../screens/settings/PetitionDueDateCounty';
 import PetitionDueDateJudicial from '../screens/settings/PetitionDueDateJudicial';
+import ContactUsScreen from '../screens/contactUs/ContactUsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +36,7 @@ const AppNavigator = () => (
       <Stack.Screen name="petitionDueDateJudicial" component={PetitionDueDateJudicial} />
       <Stack.Screen name="privacyPolicy" component={PrivacyPolicyScreen} />
       <Stack.Screen name="termsConditions" component={TermsConditionsScreen} />
+      <Stack.Screen name="contactUs" component={ContactUsScreen} />
     </Stack.Navigator>
   </NavigationContainer>
 );
