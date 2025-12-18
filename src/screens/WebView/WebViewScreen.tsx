@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView, View, StyleSheet, ActivityIndicator } from "react-native";
 import { Colors } from "../../constants/colors";
 import { RouteProp, useRoute } from '@react-navigation/native';
@@ -18,22 +18,39 @@ const WebViewScreen: React.FC = () => {
     const { link, title } = route.params;
 
     const [loading, setLoading] = useState(true);
+    const [initialLoading, setInitialLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setInitialLoading(false);
+        }, 3000);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     return (
         <SafeAreaView style={globalStyles.safeAreaContainer}>
             <AppBar title={title} />
 
-            <WebView
-                source={{ uri: link }}
-                style={{ flex: 1 }}
-                onLoadStart={() => setLoading(true)}
-                onLoadEnd={() => setLoading(false)}
-            />
-
-            {loading && (
+            {initialLoading ? (
                 <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color={Colors.light.primary} />
                 </View>
+            ) : (
+                <>
+                    <WebView
+                        source={{ uri: link }}
+                        style={{ flex: 1 }}
+                        onLoadStart={() => setLoading(true)}
+                        onLoadEnd={() => setLoading(false)}
+                    />
+
+                    {loading && (
+                        <View style={styles.loaderContainer}>
+                            <ActivityIndicator size="large" color={Colors.light.primary} />
+                        </View>
+                    )}
+                </>
             )}
         </SafeAreaView>
     );
