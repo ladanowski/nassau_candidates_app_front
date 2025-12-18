@@ -831,6 +831,10 @@ const CalendarBookingScreen: React.FC = () => {
             if (data.user?.email) {
               await StorageService.saveItem(StorageKeys.userEmail, data.user.email);
             }
+            await StorageService.saveItem(
+              StorageKeys.userPhone,
+              data.user?.phone || data.user?.phoneNumber || data.user?.mobile || ''
+            );
             // Store user ID
             if (data.user?.id) {
               await StorageService.saveItem(StorageKeys.candidateId, data.user.id);

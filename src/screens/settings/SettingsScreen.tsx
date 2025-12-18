@@ -173,7 +173,7 @@ const SettingsScreen: React.FC = () => {
           value={isQualifying}
           onValueChange={(val) => updateSingleSetting('Qualifying', val)} />
 
-        {renderSettingsItem("Appointment Times", () => navigation.navigate("appointmentTimes"))}
+        {/* Appointment Times removed from Settings UI */}
         {authToken
           ? renderSettingsItem("Logout", handleLogout)
           : renderSettingsItem("Login", () => setShowLoginPopup(true))
@@ -199,6 +199,10 @@ const SettingsScreen: React.FC = () => {
             if (data.user?.email) {
               await StorageService.saveItem(StorageKeys.userEmail, data.user.email);
             }
+            await StorageService.saveItem(
+              StorageKeys.userPhone,
+              data.user?.phone || data.user?.phoneNumber || data.user?.mobile || ''
+            );
 
             // fetch settings
             fetchSettings();

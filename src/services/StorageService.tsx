@@ -29,6 +29,12 @@ export default class StorageService {
     try {
       const value = await AsyncStorage.getItem(key);
       if (value !== null) {
+        // Some values (like phone numbers) can be all-digits.
+        // JSON.parse("5551234") returns a number, which can break consumers expecting a string (e.g. TextInput value).
+        // Treat userPhone as a raw string always.
+        if (key === 'userPhone') {
+          return value as unknown as T;
+        }
         try {
           return JSON.parse(value) as T; // Handles boolean, number, object
         } catch {

@@ -20,6 +20,7 @@ import FloridaVotersScreen from '../screens/floridaVoters/FloridaVotersScreen';
 import PollingLocationsScreen from '../screens/pollingLocations/PollingLocationsScreen';
 import CalendarBookingScreen from '../screens/calendarBooking/CalendarBookingScreen';
 import AppointmentTimesScreen from '../screens/settings/AppointmentTimesScreen';
+import ContactUsScreen from '../screens/contactUs/ContactUsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,6 +44,7 @@ const AppNavigator = () => (
       <Stack.Screen name="termsConditions" component={TermsConditionsScreen} />
       <Stack.Screen name="calendarBooking" component={CalendarBookingScreen} />
       <Stack.Screen name="appointmentTimes" component={AppointmentTimesScreen} />
+      <Stack.Screen name="contactUs" component={ContactUsScreen} />
     </Stack.Navigator>
   </NavigationContainer>
 );

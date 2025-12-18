@@ -5,4 +5,5 @@ export const StorageKeys = {
     candidateId: 'candidateId',
     userName: 'userName',
     userEmail: 'userEmail',
+    userPhone: 'userPhone',
 };
