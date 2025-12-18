@@ -17,5 +17,5 @@ export const Endpoints = {
 }
 
 export const RequestConfig = {
-    timeoutMs: 60000,
+    timeoutMs: 120000,
   };
