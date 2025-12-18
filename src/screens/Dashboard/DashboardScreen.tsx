@@ -300,6 +300,13 @@ const DashboardScreen: React.FC = () => {
             // Store the actual token from API response
             await StorageService.saveItem(StorageKeys.authToken, data.token);
             await StorageService.saveItem(StorageKeys.candidateId, data.user?.id);
+            // Store user name and email
+            if (data.user?.name) {
+              await StorageService.saveItem(StorageKeys.userName, data.user.name);
+            }
+            if (data.user?.email) {
+              await StorageService.saveItem(StorageKeys.userEmail, data.user.email);
+            }
             setAuthToken(data.token);
           }
         }}

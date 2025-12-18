@@ -192,6 +192,13 @@ const SettingsScreen: React.FC = () => {
             await StorageService.saveItem(StorageKeys.authToken, data.token);
             setAuthToken(data.token);
             await StorageService.saveItem(StorageKeys.candidateId, data.user?.id);
+            // Store user name and email
+            if (data.user?.name) {
+              await StorageService.saveItem(StorageKeys.userName, data.user.name);
+            }
+            if (data.user?.email) {
+              await StorageService.saveItem(StorageKeys.userEmail, data.user.email);
+            }
 
             // fetch settings
             fetchSettings();

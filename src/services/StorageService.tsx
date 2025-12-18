@@ -8,8 +8,17 @@ export default class StorageService {
     try {
       const toStore = typeof value === 'string' ? value : JSON.stringify(value);
       await AsyncStorage.setItem(key, toStore);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving data:', error);
+      // Log more details about the error for debugging
+      if (error?.message) {
+        console.error('Error message:', error.message);
+      }
+      if (error?.code) {
+        console.error('Error code:', error.code);
+      }
+      // Note: Not re-throwing to maintain backward compatibility
+      // If you need error handling, check the return value or use a different method
     }
   }
 

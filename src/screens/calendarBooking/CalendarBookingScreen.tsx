@@ -16,6 +16,9 @@ import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
 import { Colors } from '../../constants/colors';
 import firestore from '@react-native-firebase/firestore';
+import LoginPopup from '../../components/LoginPopup';
+import StorageService from '../../services/StorageService';
+import { StorageKeys } from '../../constants/storage_keys';
 
 type CalendarBookingRouteParams = {
   calendarBooking: {
@@ -185,20 +188,20 @@ const CalendarBookingScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   
+  // Authentication state
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
+  
   // Form state
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [guestEmails, setGuestEmails] = useState<string[]>(['']);
   const [notes, setNotes] = useState('');
+  const [userId, setUserId] = useState<number | null>(null);
   
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
-    name?: string;
-    email?: string;
     date?: string;
     time?: string;
-    guestEmails?: string[];
   }>({});
 
   // Time restrictions from Firestore
@@ -211,6 +214,27 @@ const CalendarBookingScreen: React.FC = () => {
 
   const allTimeSlots = generateTimeSlots();
   const weeksInMonth = getDaysInMonth(currentMonth.getFullYear(), currentMonth.getMonth());
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      setIsCheckingAuth(true);
+      const token = await StorageService.getItem<string>(StorageKeys.authToken);
+      setAuthToken(token);
+      
+      if (token) {
+        // Load user ID if authenticated
+        const candidateId = await StorageService.getItem<number>(StorageKeys.candidateId);
+        if (candidateId) setUserId(candidateId);
+      } else {
+        // Show login popup if not authenticated
+        setShowLoginPopup(true);
+      }
+      setIsCheckingAuth(false);
+    };
+    
+    checkAuth();
+  }, []);
 
   // Fetch time restrictions from Firestore
   useEffect(() => {
@@ -366,22 +390,8 @@ const CalendarBookingScreen: React.FC = () => {
   const timeSlotsWithStatus = getAvailableTimeSlots();
   const timeSlots = timeSlotsWithStatus.map(t => t.slot);
 
-  const validateEmail = (email: string): boolean => {
-    return /\S+@\S+\.\S+/.test(email);
-  };
-
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
-
-    if (!name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(email)) {
-      newErrors.email = 'Email is invalid';
-    }
 
     if (!selectedDate) {
       newErrors.date = 'Please select a date';
@@ -402,34 +412,8 @@ const CalendarBookingScreen: React.FC = () => {
       }
     }
 
-    // Validate guest emails
-    const guestEmailErrors: string[] = [];
-    guestEmails.forEach((guestEmail, index) => {
-      if (guestEmail.trim() && !validateEmail(guestEmail.trim())) {
-        guestEmailErrors[index] = 'Invalid email format';
-      }
-    });
-    if (guestEmailErrors.length > 0) {
-      newErrors.guestEmails = guestEmailErrors;
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleAddGuest = () => {
-    setGuestEmails([...guestEmails, '']);
-  };
-
-  const handleRemoveGuest = (index: number) => {
-    const newGuests = guestEmails.filter((_, i) => i !== index);
-    setGuestEmails(newGuests.length > 0 ? newGuests : ['']);
-  };
-
-  const handleGuestEmailChange = (index: number, value: string) => {
-    const newGuests = [...guestEmails];
-    newGuests[index] = value;
-    setGuestEmails(newGuests);
   };
 
   const handleFinalizeBooking = async () => {
@@ -441,9 +425,6 @@ const CalendarBookingScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Filter out empty guest emails
-      const validGuestEmails = guestEmails.filter(email => email.trim() !== '');
-
       // Create Timestamp from selected date
       // Combine date and time for accurate timestamp
       const appointmentDateTime = new Date(selectedDate!);
@@ -461,11 +442,15 @@ const CalendarBookingScreen: React.FC = () => {
       }
       const selectedDateTimestamp = firestore.Timestamp.fromDate(appointmentDateTime);
 
+      // Get user name and email from storage for the appointment
+      const userName = await StorageService.getItem<string>(StorageKeys.userName);
+      const userEmail = await StorageService.getItem<string>(StorageKeys.userEmail);
+
       // Create appointment data
       const appointmentData: any = {
-        name: name.trim(),
-        email: email.trim(),
-        guestEmails: validGuestEmails,
+        userId: userId,
+        name: userName || '',
+        email: userEmail || '',
         appointmentType: 'Candidate Pre-Qualifying / Qualifying',
         duration: 45,
         location: 'Candidate Conference Room',
@@ -737,6 +722,31 @@ const CalendarBookingScreen: React.FC = () => {
     );
   };
 
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <SafeAreaView style={globalStyles.safeAreaContainer}>
+        <AppBar title={title} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.light.primary} />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Don't show form if not authenticated (login popup will be shown)
+  if (!authToken) {
+    return (
+      <SafeAreaView style={globalStyles.safeAreaContainer}>
+        <AppBar title={title} />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Please sign in to continue</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
       <AppBar title={title} />
@@ -766,99 +776,6 @@ const CalendarBookingScreen: React.FC = () => {
 
         {/* Time Slots */}
         {renderTimeSlots()}
-
-        {/* Enter Details Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Enter Details</Text>
-          
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              Name <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={[styles.input, errors.name && styles.inputError]}
-              placeholder="Enter your name"
-              placeholderTextColor={Colors.light.text + '80'}
-              value={name}
-              onChangeText={(text) => {
-                setName(text);
-                setErrors(prev => ({ ...prev, name: undefined }));
-              }}
-            />
-            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              Email <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={[styles.input, errors.email && styles.inputError]}
-              placeholder="Enter your email"
-              placeholderTextColor={Colors.light.text + '80'}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setErrors(prev => ({ ...prev, email: undefined }));
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-          </View>
-        </View>
-
-        {/* Add Guests Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Add Guests</Text>
-          {guestEmails.map((guestEmail, index) => (
-            <View key={index} style={styles.guestInputContainer}>
-              <View style={styles.guestInputRow}>
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.guestInput,
-                    errors.guestEmails && errors.guestEmails[index] && styles.inputError,
-                  ]}
-                  placeholder="Enter guest email"
-                  placeholderTextColor={Colors.light.text + '80'}
-                  value={guestEmail}
-                  onChangeText={(text) => {
-                    handleGuestEmailChange(index, text);
-                    if (errors.guestEmails) {
-                      const newGuestErrors = [...errors.guestEmails];
-                      delete newGuestErrors[index];
-                      setErrors(prev => ({ ...prev, guestEmails: newGuestErrors }));
-                    }
-                  }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                {guestEmails.length > 1 && (
-                  <TouchableOpacity
-                    style={styles.removeGuestButton}
-                    onPress={() => handleRemoveGuest(index)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.removeGuestButtonText}>Remove</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              {errors.guestEmails && errors.guestEmails[index] && (
-                <Text style={styles.errorText}>{errors.guestEmails[index]}</Text>
-              )}
-            </View>
-          ))}
-          <TouchableOpacity
-            style={styles.addGuestButton}
-            onPress={handleAddGuest}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.addGuestButtonText}>+ Add Guest</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Notes Section */}
         <View style={styles.section}>
@@ -891,6 +808,39 @@ const CalendarBookingScreen: React.FC = () => {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      <LoginPopup
+        visible={showLoginPopup}
+        onClose={() => {
+          setShowLoginPopup(false);
+          // Navigate back if user closes login without logging in
+          if (!authToken) {
+            navigation.goBack();
+          }
+        }}
+        onLoginSuccess={async (data) => {
+          console.log('Login response:', data);
+          if (data.token) {
+            // Store the actual token from API response
+            await StorageService.saveItem(StorageKeys.authToken, data.token);
+            await StorageService.saveItem(StorageKeys.candidateId, data.user?.id);
+            // Store user name and email
+            if (data.user?.name) {
+              await StorageService.saveItem(StorageKeys.userName, data.user.name);
+            }
+            if (data.user?.email) {
+              await StorageService.saveItem(StorageKeys.userEmail, data.user.email);
+            }
+            // Store user ID
+            if (data.user?.id) {
+              await StorageService.saveItem(StorageKeys.candidateId, data.user.id);
+              setUserId(data.user.id);
+            }
+            setAuthToken(data.token);
+            setShowLoginPopup(false);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -902,6 +852,19 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 32,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'MyriadPro-Regular',
+    color: Colors.light.text,
+    marginTop: 12,
+    textAlign: 'center',
   },
   appointmentDetailsContainer: {
     backgroundColor: Colors.light.primary + '10',
@@ -1093,7 +1056,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'MyriadPro-Bold',
     color: Colors.light.primary,
-    marginBottom: 12,
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    fontFamily: 'MyriadPro-Regular',
+    color: Colors.light.text + 'CC',
+    marginBottom: 16,
+    fontStyle: 'italic',
   },
   inputContainer: {
     marginBottom: 16,
@@ -1121,46 +1091,15 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: Colors.light.error,
   },
+  inputReadOnly: {
+    backgroundColor: Colors.light.background + '80',
+    color: Colors.light.text + 'CC',
+  },
   errorText: {
     color: Colors.light.error,
     fontSize: 12,
     fontFamily: 'MyriadPro-Regular',
     marginTop: 4,
-  },
-  guestInputContainer: {
-    marginBottom: 12,
-  },
-  guestInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  guestInput: {
-    flex: 1,
-    marginRight: 8,
-  },
-  removeGuestButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-  },
-  removeGuestButtonText: {
-    fontSize: 14,
-    fontFamily: 'MyriadPro-Regular',
-    color: Colors.light.error,
-  },
-  addGuestButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.light.primary,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  addGuestButtonText: {
-    fontSize: 14,
-    fontFamily: 'MyriadPro-Regular',
-    color: Colors.light.primary,
   },
   notesInput: {
     minHeight: 100,

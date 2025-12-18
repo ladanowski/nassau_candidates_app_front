@@ -3,4 +3,6 @@ export const StorageKeys = {
     fcmToken: 'fcmToken',
     authToken: 'authToken',
     candidateId: 'candidateId',
+    userName: 'userName',
+    userEmail: 'userEmail',
 };
