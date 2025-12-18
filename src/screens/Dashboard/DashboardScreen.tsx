@@ -24,10 +24,11 @@ const gridItems = [
   { key: 'Notifications', icon: svgs.optionNotifications, url: null, routeTo: 'notifications', label: 'Notifications', requiredAuth: true },
   { key: 'Offices up for Election', icon: svgs.optionOfficeUpForElection, url: 'https://www.votenassaufl.gov/offices-up-for-election', label: 'Offices up for Election' },
   { key: 'Petition Queue', icon: svgs.optionPetitionQueue, url: null, label: 'Petition Queue', routeTo: 'petitionQueue'},
-  { key: 'Polling Locations & 150’ Sign Restrictions', icon: svgs.optionPollingLocation, url: 'https://www.votenassaufl.gov/150-ft-no-solicitation-zones', label: 'Polling Locations & 150’ Sign Restrictions' },
+  { key: 'Polling Locations & 150\’ Sign Restrictions', icon: svgs.optionPollingLocation, url: 'https://www.votenassaufl.gov/150-ft-no-solicitation-zones', label: 'Polling Locations & 150’ Sign Restrictions' },
   { key: 'Request Vote-by-Mail data', icon: svgs.optionRequestVoteByMail, url: 'https://www.votenassaufl.gov/vote-by-mail-data', label: 'Request Vote-by-Mail data', requiredAuth: true },
   { key: 'Schedule Qualifying Appt', icon: svgs.optionAppointmentSchedule, url: 'https://calendly.com/ncsoe/60min?month=2026-05', label: 'Schedule Qualifying Appt' },
   { key: 'Settings', icon: svgs.optionSettings, url: null, routeTo: 'settings', label: 'Settings' },
+  { key: 'Florida Voters', icon: svgs.optionFloridaVoters, url: null, routeTo: 'floridaVoters', label: 'Florida Voters', requiredAuth: true },
 ];
 
 type CountdownItem = {
