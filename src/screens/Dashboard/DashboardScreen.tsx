@@ -45,7 +45,7 @@ const gridItems = [
   { key: 'Petition Queue', icon: svgs.optionPetitionQueue, url: null, label: 'Petition Queue', routeTo: 'petitionQueue'},
   { key: 'Polling Locations & 150\' Sign Restrictions', icon: svgs.optionPollingLocation, url: null, routeTo: 'pollingLocations', label: 'Polling Locations & 150\' Sign Restrictions' },
   { key: 'Request Vote-by-Mail data', icon: svgs.optionRequestVoteByMail, url: 'https://www.votenassaufl.gov/vote-by-mail-data', label: 'Request Vote-by-Mail data', requiredAuth: true },
-  { key: 'Schedule Qualifying Appt', icon: svgs.optionAppointmentSchedule, url: 'https://calendly.com/ncsoe/60min?month=2026-05', label: 'Schedule Qualifying Appt' },
+  { key: 'Schedule Qualifying Appt', icon: svgs.optionAppointmentSchedule, url: null, routeTo: 'calendarBooking', label: 'Schedule Qualifying Appt' },
   { key: 'Settings', icon: svgs.optionSettings, url: null, routeTo: 'settings', label: 'Settings' },
   { key: 'Florida Voters', customIcon: true, url: null, routeTo: 'floridaVoters', label: 'Florida Voters' },
 ];

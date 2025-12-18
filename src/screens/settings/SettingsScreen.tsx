@@ -141,6 +141,7 @@ const SettingsScreen: React.FC = () => {
     );
   };
 
+
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
       <AppBar title={title} />
@@ -172,6 +173,7 @@ const SettingsScreen: React.FC = () => {
           value={isQualifying}
           onValueChange={(val) => updateSingleSetting('Qualifying', val)} />
 
+        {renderSettingsItem("Appointment Times", () => navigation.navigate("appointmentTimes"))}
         {authToken
           ? renderSettingsItem("Logout", handleLogout)
           : renderSettingsItem("Login", () => setShowLoginPopup(true))
