@@ -77,6 +77,9 @@ async function request<T>(path: string, init?: RequestInit & { bodyObj?: any }):
       console.log('🔴 Authentication Error - Logging out user');
       await StorageService.removeItem(StorageKeys.authToken);
       await StorageService.removeItem(StorageKeys.candidateId);
+      await StorageService.removeItem(StorageKeys.userName);
+      await StorageService.removeItem(StorageKeys.userEmail);
+      await StorageService.removeItem(StorageKeys.userPhone);
       // normalize token errors
       throw new ApiError(serverMsg || 'Session expired. Please login again.', res.status, data);
     }

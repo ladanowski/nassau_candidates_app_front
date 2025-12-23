@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		0E58BF539CB14E62B2EDA7F8 /* MyriadPro-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 96BD32F7E2FA4481A2CDC577 /* MyriadPro-Regular.otf */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		3B9C8E962EB4F3F2002666CB /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B9C8E952EB4F3F2002666CB /* GoogleService-Info.plist */; };
+		3C2200D52EE0660400CBB41F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3C2200D42EE0660400CBB41F /* GoogleService-Info.plist */; };
 		55AD88F7B24BBBDADFADCCFD /* Pods_candidates_app.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 57018E05FCB7E35F93D966C0 /* Pods_candidates_app.framework */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
@@ -25,7 +25,7 @@
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = candidates_app/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3B28F05C2DED801000433A88 /* candidates_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = candidates_app.entitlements; path = candidates_app/candidates_app.entitlements; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-candidates_app.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-candidates_app.debug.xcconfig"; path = "Target Support Files/Pods-candidates_app/Pods-candidates_app.debug.xcconfig"; sourceTree = "<group>"; };
-		3B9C8E952EB4F3F2002666CB /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		3C2200D42EE0660400CBB41F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		57018E05FCB7E35F93D966C0 /* Pods_candidates_app.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_candidates_app.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5709B34CF0A7D63546082F79 /* Pods-candidates_app.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-candidates_app.release.xcconfig"; path = "Target Support Files/Pods-candidates_app/Pods-candidates_app.release.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = candidates_app/AppDelegate.swift; sourceTree = "<group>"; };
@@ -51,7 +51,7 @@
 		13B07FAE1A68108700A75B9A /* candidates_app */ = {
 			isa = PBXGroup;
 			children = (
-				3B9C8E952EB4F3F2002666CB /* GoogleService-Info.plist */,
+				3C2200D42EE0660400CBB41F /* GoogleService-Info.plist */,
 				3B28F05C2DED801000433A88 /* candidates_app.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
@@ -187,7 +187,7 @@
 				D8BCFA9B710C4DB88F589A78 /* MyriadPro-Bold.otf in Resources */,
 				0E58BF539CB14E62B2EDA7F8 /* MyriadPro-Regular.otf in Resources */,
 				EE45B2DE5BC9405294B20FDB /* MyriadPro-BoldItalic.otf in Resources */,
-				3B9C8E962EB4F3F2002666CB /* GoogleService-Info.plist in Resources */,
+				3C2200D52EE0660400CBB41F /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -208,7 +208,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n\"$WITH_ENVIRONMENT\" \"$REACT_NATIVE_XCODE\"\n";
+			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
 		00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -300,10 +300,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = candidates_app/candidates_app.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 4;
-				DEVELOPMENT_TEAM = 666LMT8ZRB;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = WX9P8YFP44;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = candidates_app/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -317,9 +317,10 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = gov.votenassauflorida.candidatenew;
+				PRODUCT_BUNDLE_IDENTIFIER = com.votenassauflorida.candidate;
 				PRODUCT_NAME = candidates_app;
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Nassau - Candidate App Development";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -338,10 +339,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = candidates_app/candidates_app.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 4;
-				DEVELOPMENT_TEAM = 666LMT8ZRB;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = WX9P8YFP44;
 				INFOPLIST_FILE = candidates_app/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -354,9 +355,10 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = gov.votenassauflorida.candidatenew;
+				PRODUCT_BUNDLE_IDENTIFIER = com.votenassauflorida.candidate;
 				PRODUCT_NAME = candidates_app;
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Nassau - Candidate App Development";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;

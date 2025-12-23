@@ -6,7 +6,7 @@ import {
     ScrollView,
     StyleSheet,
 } from 'react-native';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { RouteProp, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
 import { Colors } from '../../constants/colors';
@@ -106,7 +106,7 @@ const NotificationDetailsScreen: React.FC = () => {
     useEffect(() => {
         if (!authToken || notification.isRead) return;
         markNotificationAsRead(notification.id);
-    }, [authToken]);
+    }, [authToken, notification.id, notification.isRead]);
 
     return (
         <SafeAreaView style={globalStyles.safeAreaContainer}>

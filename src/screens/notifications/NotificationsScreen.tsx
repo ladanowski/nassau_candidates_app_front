@@ -40,7 +40,6 @@ const NotificationsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<any>>();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -64,7 +63,7 @@ const NotificationsScreen: React.FC = () => {
           const data = response.data || [];
           if (data.length < limit) setHasMore(false);
 
-          const formattedData: Notification[] = data.map((item: any, index: number) => ({
+          const formattedData: Notification[] = data.map((item: any) => ({
             id: item.ID.toString(),
             title: item.Subject,
             message: item.Message,
@@ -85,7 +84,7 @@ const NotificationsScreen: React.FC = () => {
     };
 
     fetchInitialNotifications();
-  }, []);
+  }, [navigation]);
 
   // Fetch for pagination (page > 1)
   const fetchMoreNotifications = async () => {

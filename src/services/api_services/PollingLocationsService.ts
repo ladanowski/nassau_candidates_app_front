@@ -43,3 +43,4 @@ export async function getPollingLocations(): Promise<PollingLocationData | null>
     return res.success && res.data ? res.data : null;
 }
 
+

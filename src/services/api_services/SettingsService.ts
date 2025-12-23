@@ -32,22 +32,3 @@ export type UpdateSettingsRequest = {
   export async function updateSettings(body: Partial<UpdateSettingsRequest>): Promise<SettingsResponse> {
     return await ApiClient.post<SettingsResponse>(Endpoints.settings, body);
   }
-
-  type SetupAppointmentTimesResponse = {
-    success: boolean;
-    message?: string;
-    added?: number;
-    updated?: number;
-    total?: number;
-    restrictions?: Array<{
-      id: string;
-      day: string;
-      begin: string;
-      end: string;
-    }>;
-    error?: string;
-  };
-
-  export async function setupAppointmentTimes(): Promise<SetupAppointmentTimesResponse> {
-    return await ApiClient.post<SetupAppointmentTimesResponse>(`${Endpoints.settings}/setup-appointment-times`, {});
-  }

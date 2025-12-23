@@ -8,17 +8,8 @@ export default class StorageService {
     try {
       const toStore = typeof value === 'string' ? value : JSON.stringify(value);
       await AsyncStorage.setItem(key, toStore);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving data:', error);
-      // Log more details about the error for debugging
-      if (error?.message) {
-        console.error('Error message:', error.message);
-      }
-      if (error?.code) {
-        console.error('Error code:', error.code);
-      }
-      // Note: Not re-throwing to maintain backward compatibility
-      // If you need error handling, check the return value or use a different method
     }
   }
 
@@ -29,12 +20,6 @@ export default class StorageService {
     try {
       const value = await AsyncStorage.getItem(key);
       if (value !== null) {
-        // Some values (like phone numbers) can be all-digits.
-        // JSON.parse("5551234") returns a number, which can break consumers expecting a string (e.g. TextInput value).
-        // Treat userPhone as a raw string always.
-        if (key === 'userPhone') {
-          return value as unknown as T;
-        }
         try {
           return JSON.parse(value) as T; // Handles boolean, number, object
         } catch {

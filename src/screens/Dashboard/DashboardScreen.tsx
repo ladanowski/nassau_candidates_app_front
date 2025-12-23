@@ -28,34 +28,6 @@ import StorageService from '../../services/StorageService';
 import LoginPopup from '../../components/LoginPopup';
 import {getUnreadNotificationsCount} from '../../services/api_services/NotificationsService';
 
-// Custom component for Florida Voters icon
-const FloridaVotersIcon = ({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}) => (
-  <View
-    style={{
-      width: width,
-      height: height,
-      borderRadius: width / 2,
-      backgroundColor: '#fff',
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}>
-    <Text
-      style={{
-        fontSize: 20,
-        fontFamily: 'MyriadPro-Bold',
-        color: Colors.light.primary,
-      }}>
-      FLV
-    </Text>
-  </View>
-);
-
 const gridItems = [
   {
     key: 'Announced Candidates',
@@ -76,6 +48,7 @@ const gridItems = [
     url: 'https://www.votenassaufl.gov/canvassing-board',
     label: 'Canvassing Board',
   },
+  // { key: 'Contact Us', icon: svgs.optionContactUs, url: 'https://www.votenassaufl.gov/contact', label: 'Contact Us' },
   {
     key: 'Contact Us',
     icon: svgs.optionContactUs,
@@ -112,11 +85,11 @@ const gridItems = [
     routeTo: 'petitionQueue',
   },
   {
-    key: "Polling Locations & 150' Sign Restrictions",
+    key: 'Polling Locations & 150’ Sign Restrictions',
     icon: svgs.optionPollingLocation,
     url: null,
     routeTo: 'pollingLocations',
-    label: "Polling Locations & 150' Sign Restrictions",
+    label: 'Polling Locations & 150’ Sign Restrictions',
   },
   {
     key: 'Request Vote-by-Mail data',
@@ -141,10 +114,11 @@ const gridItems = [
   },
   {
     key: 'Florida Voters',
-    customIcon: true,
+    icon: svgs.optionFloridaVoters,
     url: null,
     routeTo: 'floridaVoters',
     label: 'Florida Voters',
+    requiredAuth: true,
   },
 ];
 
@@ -153,40 +127,6 @@ type CountdownItem = {
   label: string;
   date: Date;
 };
-
-function coerceToDate(value: any): Date | null {
-  if (!value) return null;
-
-  // @react-native-firebase/firestore Timestamp
-  if (typeof value?.toDate === 'function') {
-    const d: Date = value.toDate();
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? null : value;
-  }
-
-  if (typeof value === 'number') {
-    const d = new Date(value);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-
-  if (typeof value === 'string') {
-    const d = new Date(value);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-
-  // Firestore timestamp-like plain object (both shapes seen in the wild)
-  const seconds = value?.seconds ?? value?._seconds;
-  const nanoseconds = value?.nanoseconds ?? value?._nanoseconds ?? 0;
-  if (typeof seconds === 'number') {
-    const d = new Date(seconds * 1000 + Number(nanoseconds) / 1e6);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-
-  return null;
-}
 
 const DashboardScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<any>>();
@@ -202,49 +142,32 @@ const DashboardScreen: React.FC = () => {
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
+    const fetchCountdownDates = async () => {
+      try {
+        const snapshot = await firestore()
+          .collection('dates')
+          .orderBy('order')
+          .get();
 
-    if (__DEV__) {
-      console.log('Firebase projectId:', firestore().app.options.projectId);
-      console.log('Firebase app name:', firestore().app.name);
-    }
+        const fetchedData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            label: data.label,
+            date: data.date.toDate(),
+          };
+        });
 
-    const unsubscribe = firestore()
-      .collection('dates')
-      .orderBy('order')
-      .onSnapshot(
-        snapshot => {
-          const items: CountdownItem[] = [];
+        console.log('Fetched countdown data:', fetchedData);
+        setCountdownData(fetchedData);
+      } catch (error) {
+        console.error('Failed to fetch countdowns from Firestore:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-          snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const date = coerceToDate(data?.date);
-            const label =
-              typeof data?.label === 'string'
-                ? data.label
-                : String(data?.label ?? '');
-
-            if (!date || !label) return;
-
-            items.push({
-              id: doc.id,
-              label,
-              date,
-            });
-          });
-
-          setCountdownData(items);
-          setLoading(false);
-        },
-        error => {
-          console.error(
-            'Failed to subscribe to countdowns from Firestore:',
-            error,
-          );
-          setCountdownData([]);
-          setLoading(false);
-        },
-      );
+    fetchCountdownDates();
 
     const checkFirstLaunch = async () => {
       const isFirstLaunch = await StorageService.getItem<boolean>(
@@ -254,8 +177,6 @@ const DashboardScreen: React.FC = () => {
     };
 
     checkFirstLaunch();
-
-    return () => unsubscribe();
   }, []);
 
   useFocusEffect(
@@ -306,11 +227,7 @@ const DashboardScreen: React.FC = () => {
           }
         }
       }}>
-      {item.customIcon ? (
-        <FloridaVotersIcon width={80} height={80} />
-      ) : (
-        <item.icon width={80} height={80} />
-      )}
+      <item.icon width={80} height={80} />
       <Text style={styles.gridLabel}>{item.label}</Text>
     </TouchableOpacity>
   );
@@ -456,27 +373,40 @@ const DashboardScreen: React.FC = () => {
               StorageKeys.candidateId,
               data.user?.id,
             );
-            // Store user name and email
-            if (data.user?.name) {
-              await StorageService.saveItem(
-                StorageKeys.userName,
-                data.user.name,
-              );
-            }
-            if (data.user?.email) {
-              await StorageService.saveItem(
-                StorageKeys.userEmail,
-                data.user.email,
-              );
-            }
-            await StorageService.saveItem(
-              StorageKeys.userPhone,
-              data.user?.phone ||
-                data.user?.phoneNumber ||
-                data.user?.mobile ||
-                '',
-            );
             setAuthToken(data.token);
+
+            // Store user details (best-effort) for Contact Us prefills
+            const firstName = (data.user?.firstName ??
+              data.user?.FirstName ??
+              data.user?.fname ??
+              '') as string;
+            const lastName = (data.user?.lastName ??
+              data.user?.LastName ??
+              data.user?.lname ??
+              '') as string;
+            const fullName = (data.user?.name ??
+              data.user?.fullName ??
+              `${firstName} ${lastName}`.trim()) as string;
+
+            const email = (data.user?.email ??
+              data.user?.Email ??
+              data.email ??
+              '') as string;
+            const phone = (data.user?.phone ??
+              data.user?.phoneNumber ??
+              data.user?.Phone ??
+              data.user?.PhoneNumber ??
+              '') as string;
+
+            if (fullName)
+              await StorageService.saveItem(StorageKeys.userName, fullName);
+            if (email)
+              await StorageService.saveItem(StorageKeys.userEmail, email);
+            if (phone !== null && phone !== undefined)
+              await StorageService.saveItem(
+                StorageKeys.userPhone,
+                String(phone),
+              );
           }
         }}
       />

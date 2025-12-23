@@ -12,3 +12,9 @@ declare module '*.svg' {
   const content: React.FC<SvgProps>;
   export default content;
 }
+
+// For PDFs (as bundled assets via require())
+declare module '*.pdf' {
+  const value: any;
+  export default value;
+}

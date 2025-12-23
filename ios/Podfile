@@ -37,22 +37,30 @@ target 'candidates_app' do
       # :ccache_enabled => true
     )
 
-    # Fix CocoaPods-generated script phases when the project path contains spaces
-    # (e.g. ".../Jeremy Nassau/..."). Without this, Xcode runs:
-    #   /bin/sh -c "$WITH_ENVIRONMENT $SCRIPT_PHASES_SCRIPT"
-    # which breaks into "/Users/.../Jeremy" and fails.
-    installer.pods_project.targets.each do |target|
-      target.build_phases.each do |phase|
-        next unless phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
-        next unless phase.shell_script
+    # Fix iOS builds failing with `non-modular-include-in-framework-module` when using frameworks.
+    # This can be triggered by `use_frameworks!` (even static) across some React Native / Pods targets.
+    installer.pods_project.targets.each do |t|
+      t.build_configurations.each do |bc|
+        bc.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
 
-        phase.shell_script = phase.shell_script.gsub(
-          %q(/bin/sh -c "$WITH_ENVIRONMENT $SCRIPT_PHASES_SCRIPT"),
-          %q("$WITH_ENVIRONMENT" "$SCRIPT_PHASES_SCRIPT")
-        )
+        # Some targets add -Werror=non-modular-include-in-framework-module; remove it if present.
+        ['OTHER_CFLAGS', 'OTHER_CPLUSPLUSFLAGS'].each do |k|
+          v = bc.build_settings[k]
+          next if v.nil?
+
+          flags =
+            if v.is_a?(String)
+              v.split(' ')
+            elsif v.is_a?(Array)
+              v
+            else
+              []
+            end
+
+          flags = flags.reject { |f| f == '-Werror=non-modular-include-in-framework-module' }
+          bc.build_settings[k] = v.is_a?(String) ? flags.join(' ') : flags
+        end
       end
     end
-
-    installer.pods_project.save
   end
 end

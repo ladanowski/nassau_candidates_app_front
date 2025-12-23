@@ -16,11 +16,10 @@ import CommitteeFinanceReport from '../screens/settings/CommitteeFinanceReport';
 import ImportantElectionDates from '../screens/settings/ImportantElectionDates';
 import PetitionDueDateCounty from '../screens/settings/PetitionDueDateCounty';
 import PetitionDueDateJudicial from '../screens/settings/PetitionDueDateJudicial';
+import ContactUsScreen from '../screens/contactUs/ContactUsScreen';
 import FloridaVotersScreen from '../screens/floridaVoters/FloridaVotersScreen';
 import PollingLocationsScreen from '../screens/pollingLocations/PollingLocationsScreen';
 import CalendarBookingScreen from '../screens/calendarBooking/CalendarBookingScreen';
-import AppointmentTimesScreen from '../screens/settings/AppointmentTimesScreen';
-import ContactUsScreen from '../screens/contactUs/ContactUsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -32,8 +31,6 @@ const AppNavigator = () => (
       <Stack.Screen name="notifications" component={NotificationsScreen} />
       <Stack.Screen name="notificationDetails" component={NotificationDetailsScreen} />
       <Stack.Screen name="petitionQueue" component={PetitionQueueScreen} />
-      <Stack.Screen name="floridaVoters" component={FloridaVotersScreen} />
-      <Stack.Screen name="pollingLocations" component={PollingLocationsScreen} />
       <Stack.Screen name="settings" component={SettingsScreen} />
       <Stack.Screen name="candidateFinanceReport" component={CandidateFinanceReport} />
       <Stack.Screen name="committeeFinanceReport" component={CommitteeFinanceReport} />
@@ -42,9 +39,10 @@ const AppNavigator = () => (
       <Stack.Screen name="petitionDueDateJudicial" component={PetitionDueDateJudicial} />
       <Stack.Screen name="privacyPolicy" component={PrivacyPolicyScreen} />
       <Stack.Screen name="termsConditions" component={TermsConditionsScreen} />
-      <Stack.Screen name="calendarBooking" component={CalendarBookingScreen} />
-      <Stack.Screen name="appointmentTimes" component={AppointmentTimesScreen} />
       <Stack.Screen name="contactUs" component={ContactUsScreen} />
+      <Stack.Screen name="floridaVoters" component={FloridaVotersScreen} />
+      <Stack.Screen name="pollingLocations" component={PollingLocationsScreen} />
+      <Stack.Screen name="calendarBooking" component={CalendarBookingScreen} />
     </Stack.Navigator>
   </NavigationContainer>
 );

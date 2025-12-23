@@ -100,7 +100,7 @@ const FloridaVotersScreen: React.FC = () => {
     const [voters, setVoters] = useState<VoterItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [loadingFilters, setLoadingFilters] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+    const [_error, setError] = useState<string | null>(null);
     
     const [showCityDropdown, setShowCityDropdown] = useState(false);
     const [showCountyDropdown, setShowCountyDropdown] = useState(false);

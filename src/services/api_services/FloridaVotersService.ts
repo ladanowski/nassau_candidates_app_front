@@ -100,4 +100,3 @@ export async function getFilteredVoters(filters: {
   const res = await ApiClient.get<VotersResponse>(url);
   return res.success && Array.isArray(res.data) ? res.data : [];
 }
-

@@ -17,6 +17,7 @@ import OptionCampaignFinance from '../../assets/svgs/option_campaign_finance.svg
 import OptionNotifications from '../../assets/svgs/option_notifications.svg';
 import OptionGazel from '../../assets/svgs/option_gazel.svg';
 import OptionAppointmentSchedule from '../../assets/svgs/option_schedule_appointment.svg';
+import OptionFloridaVoters from '../../assets/svgs/option_florida_voters.svg';
 import TimerBackground from '../../assets/svgs/timer_background.svg';
 import NassauCountry from '../../assets/svgs/nassau_country.svg';
 import Eye from '../../assets/svgs/eye.svg';
@@ -50,6 +51,7 @@ export const svgs = {
   optionNotifications: OptionNotifications,
   optionAppointmentSchedule: OptionAppointmentSchedule,
   optionGazel: OptionGazel,
+  optionFloridaVoters: OptionFloridaVoters,
   timerBackground: TimerBackground,
   nassauCountry: NassauCountry,
   eye: Eye,

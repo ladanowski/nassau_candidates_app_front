@@ -32,16 +32,8 @@ local.properties
 *.hprof
 .cxx/
 *.keystore
+!debug.keystore
 .kotlin/
-
-# Android signing / firebase / build outputs (avoid committing secrets + artifacts)
-*.jks
-**/android/app/google-services.json
-**/android/app/release/
-*.aab
-
-# iOS firebase config (avoid committing secrets)
-**/ios/GoogleService-Info.plist
 
 # node.js
 #

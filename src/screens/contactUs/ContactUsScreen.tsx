@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
-import {useNavigation, NavigationProp} from '@react-navigation/native';
+import {useNavigation, NavigationProp, RouteProp, useRoute} from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import Button from '../../components/Button';
 import {Colors} from '../../constants/colors';
@@ -18,8 +18,17 @@ import {StorageKeys} from '../../constants/storage_keys';
 import StorageService from '../../services/StorageService';
 import {globalStyles} from '../../styles/globalStyles';
 
+type ContactUsRouteParams = {
+  contactUs: {
+    title?: string;
+  };
+};
+
 const ContactUsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<any>>();
+  const route = useRoute<RouteProp<ContactUsRouteParams, 'contactUs'>>();
+  const title = route?.params?.title ?? 'Contact Us';
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,18 +45,22 @@ const ContactUsScreen: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [token, name, email, phone, cid] = await Promise.all([
+        const [token, name, email, phoneRaw, cid] = await Promise.all([
           StorageService.getItem<string>(StorageKeys.authToken),
           StorageService.getItem<string>(StorageKeys.userName),
           StorageService.getItem<string>(StorageKeys.userEmail),
-          StorageService.getItem<string>(StorageKeys.userPhone),
+          StorageService.getItem<unknown>(StorageKeys.userPhone),
           StorageService.getItem<string>(StorageKeys.candidateId),
         ]);
 
         setAuthToken(token);
         setUserName(name);
         setUserEmail(email);
-        setUserPhone(phone);
+        const phoneText =
+          phoneRaw === null || phoneRaw === undefined
+            ? null
+            : String(phoneRaw).trim();
+        setUserPhone(phoneText && phoneText.length > 0 ? phoneText : null);
         setCandidateId(cid);
       } finally {
         setLoading(false);
@@ -131,7 +144,7 @@ const ContactUsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={globalStyles.safeAreaContainer}>
-      <AppBar title="Contact Us" />
+      <AppBar title={title} />
 
       <ScrollView
         contentContainerStyle={styles.container}
