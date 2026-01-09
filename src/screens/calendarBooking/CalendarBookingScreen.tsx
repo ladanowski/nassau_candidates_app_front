@@ -28,6 +28,19 @@ type CalendarBookingRouteParams = {
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+type ScheduledAppointment = {
+  id: string;
+  userId?: number | null;
+  name?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  selectedDate?: any; // Firestore Timestamp
+  selectedDateString?: string; // YYYY-MM-DD
+  selectedTime?: string; // "10:00 AM"
+  status?: string;
+};
+
 // Generate time slots with 15-minute intervals (9:00 AM to 5:00 PM)
 const generateTimeSlots = (): string[] => {
   const slots: string[] = [];
@@ -243,8 +256,106 @@ const CalendarBookingScreen: React.FC = () => {
   const [existingAppointments, setExistingAppointments] = useState<Set<string>>(new Set());
   const [loadingAppointments, setLoadingAppointments] = useState(false);
 
+  // Upcoming scheduled appointments (today+)
+  const [scheduledAppointments, setScheduledAppointments] = useState<ScheduledAppointment[]>([]);
+  const [loadingScheduledAppointments, setLoadingScheduledAppointments] = useState(false);
+  const [scheduledAppointmentsError, setScheduledAppointmentsError] = useState<string | null>(null);
+  const [scheduledAppointmentsLastDoc, setScheduledAppointmentsLastDoc] = useState<any>(null);
+  const [scheduledAppointmentsHasMore, setScheduledAppointmentsHasMore] = useState(true);
+
   const allTimeSlots = generateTimeSlots();
   const weeksInMonth = getDaysInMonth(currentMonth.getFullYear(), currentMonth.getMonth());
+
+  const formatScheduledApptDateTime = (appt: ScheduledAppointment): string => {
+    let dateObj: Date | null = null;
+    try {
+      if (appt.selectedDate && typeof appt.selectedDate.toDate === 'function') {
+        dateObj = appt.selectedDate.toDate();
+      } else if (appt.selectedDateString) {
+        // stored as YYYY-MM-DD
+        dateObj = new Date(`${appt.selectedDateString}T00:00:00`);
+      }
+    } catch {
+      dateObj = null;
+    }
+
+    const dateLabel = dateObj
+      ? dateObj.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+      : (appt.selectedDateString || '');
+
+    const timeLabel = appt.selectedTime || '';
+    return [dateLabel, timeLabel].filter(Boolean).join(' — ');
+  };
+
+  const fetchScheduledAppointments = async (opts?: { reset?: boolean }) => {
+    const reset = opts?.reset ?? false;
+    const PAGE_SIZE = 50;
+
+    setLoadingScheduledAppointments(true);
+    if (reset) {
+      setScheduledAppointmentsError(null);
+      setScheduledAppointmentsLastDoc(null);
+      setScheduledAppointmentsHasMore(true);
+    }
+
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const startOfTodayTs = firestore.Timestamp.fromDate(today);
+
+      let query = firestore()
+        .collection('appointments')
+        .where('status', '==', 'scheduled')
+        .where('selectedDate', '>=', startOfTodayTs)
+        .orderBy('selectedDate', 'asc')
+        .limit(PAGE_SIZE);
+
+      const lastDoc = reset ? null : scheduledAppointmentsLastDoc;
+      if (lastDoc) {
+        query = query.startAfter(lastDoc);
+      }
+
+      let snapshot;
+      try {
+        snapshot = await query.get();
+      } catch (e: any) {
+        // This query may require a composite index (status + selectedDate). If it fails,
+        // fall back to a simpler query and filter status client-side.
+        const msg = String(e?.message || e);
+        console.warn('Scheduled appointments query failed; falling back:', msg);
+
+        let fallback = firestore()
+          .collection('appointments')
+          .where('selectedDate', '>=', startOfTodayTs)
+          .orderBy('selectedDate', 'asc')
+          .limit(PAGE_SIZE);
+
+        const fallbackLastDoc = reset ? null : scheduledAppointmentsLastDoc;
+        if (fallbackLastDoc) {
+          fallback = fallback.startAfter(fallbackLastDoc);
+        }
+        snapshot = await fallback.get();
+      }
+
+      const docs = snapshot.docs || [];
+      const mapped: ScheduledAppointment[] = docs
+        .map((d: any) => ({ id: d.id, ...(d.data?.() ?? {}) }))
+        .filter((a: ScheduledAppointment) => (a.status || '').toLowerCase() === 'scheduled');
+
+      const newLastDoc = docs.length > 0 ? docs[docs.length - 1] : null;
+      setScheduledAppointmentsLastDoc(newLastDoc);
+      setScheduledAppointmentsHasMore(docs.length === PAGE_SIZE);
+
+      setScheduledAppointments(prev => (reset ? mapped : [...prev, ...mapped]));
+      setScheduledAppointmentsError(null);
+    } catch (e: any) {
+      console.error('Failed to load scheduled appointments:', e);
+      setScheduledAppointmentsError(e?.message || 'Failed to load scheduled appointments.');
+      if (reset) setScheduledAppointments([]);
+    } finally {
+      setLoadingScheduledAppointments(false);
+    }
+  };
 
   // Check authentication on mount
   useEffect(() => {
@@ -265,6 +376,12 @@ const CalendarBookingScreen: React.FC = () => {
     };
 
     checkAuth();
+  }, []);
+
+  // Load upcoming scheduled appointments (today+)
+  useEffect(() => {
+    fetchScheduledAppointments({ reset: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch time restrictions from Firestore
@@ -443,12 +560,14 @@ const CalendarBookingScreen: React.FC = () => {
       // Get user name and email from storage for the appointment
       const userName = await StorageService.getItem<string>(StorageKeys.userName);
       const userEmail = await StorageService.getItem<string>(StorageKeys.userEmail);
+      const userPhone = await StorageService.getItem<string>(StorageKeys.userPhone);
 
       // Create appointment data
       const appointmentData: any = {
         userId: userId,
         name: userName || '',
         email: userEmail || '',
+        phone: userPhone || '',
         appointmentType: 'Candidate Pre-Qualifying / Qualifying',
         duration: 45,
         location: 'Candidate Conference Room',
@@ -464,6 +583,9 @@ const CalendarBookingScreen: React.FC = () => {
 
       // Save to Firebase Firestore
       const docRef = await firestore().collection('appointments').add(appointmentData);
+
+      // Refresh upcoming scheduled list so the new booking appears.
+      fetchScheduledAppointments({ reset: true });
 
       // Add the booked time to existing appointments to immediately reflect in UI
       setExistingAppointments(prev => new Set([...prev, selectedTime!]));
@@ -849,6 +971,48 @@ const CalendarBookingScreen: React.FC = () => {
         >
           {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.finalizeButtonText}>Finalize Booking</Text>}
         </TouchableOpacity>
+
+        {/* Scheduled Appointments (Upcoming) */}
+        <View style={[styles.section, styles.scheduledAppointmentsSection]}>
+          <Text style={styles.sectionTitle}>Scheduled Appointments (Upcoming)</Text>
+
+          {loadingScheduledAppointments ? (
+            <View style={{ paddingVertical: 12 }}>
+              <ActivityIndicator color={Colors.light.primary} />
+              <Text style={styles.loadingText}>Loading scheduled appointments...</Text>
+            </View>
+          ) : scheduledAppointmentsError ? (
+            <Text style={styles.errorText}>{scheduledAppointmentsError}</Text>
+          ) : scheduledAppointments.length === 0 ? (
+            <Text style={styles.helperText}>No upcoming scheduled appointments found.</Text>
+          ) : (
+            <View style={styles.scheduledList}>
+              {scheduledAppointments.map(appt => (
+                <View key={appt.id} style={styles.scheduledItem}>
+                  <Text style={styles.scheduledName}>{appt.name || '—'}</Text>
+                  <Text style={styles.scheduledMeta}>{formatScheduledApptDateTime(appt) || '—'}</Text>
+                  <Text style={styles.scheduledMeta}>Email: {appt.email || '—'}</Text>
+                  <Text style={styles.scheduledMeta}>Phone: {appt.phone || '—'}</Text>
+                  {!!appt.notes && (
+                    <Text style={styles.scheduledNotes} numberOfLines={3}>
+                      Notes: {appt.notes}
+                    </Text>
+                  )}
+                </View>
+              ))}
+
+              {scheduledAppointmentsHasMore && (
+                <TouchableOpacity
+                  style={styles.loadMoreButton}
+                  onPress={() => fetchScheduledAppointments({ reset: false })}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.loadMoreButtonText}>Load more</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -874,6 +1038,56 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
     marginTop: 12,
     textAlign: 'center',
+  },
+  helperText: {
+    fontSize: 14,
+    fontFamily: 'MyriadPro-Regular',
+    color: Colors.light.text,
+    opacity: 0.8,
+    marginTop: 6,
+  },
+  scheduledList: {
+    marginTop: 12,
+    gap: 10,
+  },
+  scheduledItem: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: `${Colors.light.primary}30`,
+    borderRadius: 8,
+    padding: 12,
+  },
+  scheduledName: {
+    fontSize: 16,
+    fontFamily: 'MyriadPro-Bold',
+    color: Colors.light.primary,
+    marginBottom: 6,
+  },
+  scheduledMeta: {
+    fontSize: 13,
+    fontFamily: 'MyriadPro-Regular',
+    color: Colors.light.text,
+    marginBottom: 2,
+  },
+  scheduledNotes: {
+    marginTop: 6,
+    fontSize: 13,
+    fontFamily: 'MyriadPro-Regular',
+    color: Colors.light.text,
+    opacity: 0.9,
+  },
+  loadMoreButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  loadMoreButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: 'MyriadPro-Bold',
   },
   appointmentDetailsContainer: {
     backgroundColor: Colors.light.primary + '10',
@@ -1051,6 +1265,9 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 24,
+  },
+  scheduledAppointmentsSection: {
+    marginTop: 16,
   },
   sectionTitle: {
     fontSize: 16,

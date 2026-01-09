@@ -54,6 +54,10 @@ const App = () => {
       const tokenDocRef = firestore().collection('fcmTokens').doc(tokenDocId);
 
       const existingDoc = await tokenDocRef.get();
+      const docExists =
+        typeof (existingDoc as any).exists === 'function'
+          ? (existingDoc as any).exists()
+          : (existingDoc as any).exists;
 
       const deviceInfo = {
         brand: DeviceInfo.getBrand(),
@@ -68,14 +72,14 @@ const App = () => {
       const dataToSave = {
         fcmToken: token,
         deviceInfo,
-        ...(existingDoc.exists
+        ...(docExists
           ? { updatedAt: firestore.FieldValue.serverTimestamp() }
           : { createdAt: firestore.FieldValue.serverTimestamp() }),
       };
 
       await tokenDocRef.set(dataToSave, { merge: true });
 
-      console.log(`FCM token ${existingDoc.exists ? 'updated' : 'created'} in Firestore`);
+      console.log(`FCM token ${docExists ? 'updated' : 'created'} in Firestore`);
     } catch (error) {
       console.error(' Error saving FCM token to Firestore:', error);
     }

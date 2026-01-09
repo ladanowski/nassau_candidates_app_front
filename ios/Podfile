@@ -37,6 +37,24 @@ target 'candidates_app' do
       # :ccache_enabled => true
     )
 
+    # Fix CocoaPods-generated script phases when the project path contains spaces
+    # (e.g. ".../Jeremy Nassau/..."). Without this, Xcode runs:
+    #   /bin/sh -c "$WITH_ENVIRONMENT $SCRIPT_PHASES_SCRIPT"
+    # which breaks into "/Users/.../Jeremy" and fails.
+    installer.pods_project.targets.each do |target|
+      target.build_phases.each do |phase|
+        next unless phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
+        next unless phase.shell_script
+
+        phase.shell_script = phase.shell_script.gsub(
+          %q(/bin/sh -c "$WITH_ENVIRONMENT $SCRIPT_PHASES_SCRIPT"),
+          %q("$WITH_ENVIRONMENT" "$SCRIPT_PHASES_SCRIPT")
+        )
+      end
+    end
+
+    installer.pods_project.save
+
     # Fix iOS builds failing with `non-modular-include-in-framework-module` when using frameworks.
     # This can be triggered by `use_frameworks!` (even static) across some React Native / Pods targets.
     installer.pods_project.targets.each do |t|

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   FlatList,
   SafeAreaView,
@@ -12,11 +12,16 @@ import {
   Platform,
 } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
-import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import {
+  NavigationProp,
+  RouteProp,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
-import { globalStyles } from '../../styles/globalStyles';
-import { Colors } from '../../constants/colors';
-import { getNotifications } from '../../services/api_services/NotificationsService';
+import {globalStyles} from '../../styles/globalStyles';
+import {Colors} from '../../constants/colors';
+import {getNotifications} from '../../services/api_services/NotificationsService';
 import PushNotificationIOS from '@react-native-community/push-notification-ios';
 
 type NotificationsRouteParams = {
@@ -35,8 +40,9 @@ interface Notification {
 }
 
 const NotificationsScreen: React.FC = () => {
-  const route = useRoute<RouteProp<NotificationsRouteParams, 'notifications'>>();
-  const { title } = route.params;
+  const route =
+    useRoute<RouteProp<NotificationsRouteParams, 'notifications'>>();
+  const {title} = route.params;
   const navigation = useNavigation<NavigationProp<any>>();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -45,8 +51,15 @@ const NotificationsScreen: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const pageRef = useRef(1);
   const isFetchingRef = useRef(false);
-  
+
   const limit = 10;
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  // Re-render periodically so "x min ago" updates without refetching.
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Initial load - fetch page 1 on component mount
   useEffect(() => {
@@ -77,7 +90,11 @@ const NotificationsScreen: React.FC = () => {
       } catch (error: any) {
         console.error('Failed to fetch notifications:', error);
         navigation.goBack();
-        Alert.alert('Notifications', error.message || 'Network error. Please check your connection and try again.');
+        Alert.alert(
+          'Notifications',
+          error.message ||
+            'Network error. Please check your connection and try again.',
+        );
       } finally {
         setLoading(false);
       }
@@ -92,7 +109,7 @@ const NotificationsScreen: React.FC = () => {
 
     isFetchingRef.current = true;
     setLoading(true);
-    
+
     try {
       const nextPage = pageRef.current + 1;
       const response = await getNotifications(nextPage, limit);
@@ -129,7 +146,7 @@ const NotificationsScreen: React.FC = () => {
     pageRef.current = 1;
     setNotifications([]);
     setHasMore(true);
-    
+
     try {
       if (Platform.OS === 'ios') {
         PushNotificationIOS.setApplicationIconBadgeNumber(0);
@@ -152,59 +169,71 @@ const NotificationsScreen: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Failed to refresh notifications:', error);
-      Alert.alert('Refresh Failed', error.message || 'Unable to refresh notifications.');
+      Alert.alert(
+        'Refresh Failed',
+        error.message || 'Unable to refresh notifications.',
+      );
     } finally {
       setRefreshing(false);
     }
   }, []);
 
+  const parseNotificationDate = (dateTime: string): Date => {
+    // If the string already includes a timezone (Z or ±HH:MM), parse as-is.
+    // If not, treat it as UTC by appending 'Z' to avoid local-time misinterpretation.
+    const hasTz = /([zZ]|[+-]\d{2}:\d{2})$/.test(dateTime.trim());
+    return new Date(hasTz ? dateTime : `${dateTime}Z`);
+  };
+
   const formatDateTime = (dateTime: string): string => {
-  const date = new Date(dateTime); // JS automatically handles UTC → local
+    // Expect a timezone-aware timestamp string from the API (e.g. "...Z" or "-05:00").
+    const date = parseNotificationDate(dateTime);
 
-  const now = new Date();
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-  const diffInHours = Math.floor(diffInMinutes / 60);
+    const now = new Date(nowTick);
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.max(0, Math.floor(diffInMs / (1000 * 60)));
+    const diffInHours = Math.floor(diffInMinutes / 60);
 
-   if (diffInMinutes < 1) {
-    return 'Just now';
-  } else if (diffInMinutes < 60) {
-    if (diffInMinutes < 15) return `${diffInMinutes} min ago`;
-    if (diffInMinutes < 30) return '15 min ago';
-    if (diffInMinutes < 45) return '30 min ago';
-    return '45 min ago';
-  } else if (diffInHours < 24) {
-    return `${diffInHours}h ago`;
-  } else if (diffInHours < 48) {
-    return 'Yesterday';
-  } else {
-    return date.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-};
-
+    if (diffInMinutes < 1) {
+      return 'Just now';
+    } else if (diffInMinutes < 60) {
+      if (diffInMinutes < 15) return `${diffInMinutes} min ago`;
+      if (diffInMinutes < 30) return '15 min ago';
+      if (diffInMinutes < 45) return '30 min ago';
+      return '45 min ago';
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h ago`;
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+  };
 
   const getTypeColor = (type: string = 'info'): string => {
     switch (type) {
-      case 'success': return '#10B981';
-      case 'warning': return '#F59E0B';
-      case 'error': return '#EF4444';
-      default: return '#3B82F6';
+      case 'success':
+        return '#10B981';
+      case 'warning':
+        return '#F59E0B';
+      case 'error':
+        return '#EF4444';
+      default:
+        return '#3B82F6';
     }
   };
 
   const markAsRead = (id: string) => {
     setNotifications(prev =>
       prev.map(notification =>
-        notification.id === id
-          ? { ...notification, isRead: true }
-          : notification
-      )
+        notification.id === id ? {...notification, isRead: true} : notification,
+      ),
     );
   };
 
@@ -213,28 +242,33 @@ const NotificationsScreen: React.FC = () => {
       markAsRead(notification.id);
     }
 
-    navigation.navigate('notificationDetails', { notification });
+    navigation.navigate('notificationDetails', {notification});
   };
 
-  const renderNotificationItem = ({ item }: { item: Notification }) => (
+  const renderNotificationItem = ({item}: {item: Notification}) => (
     <TouchableOpacity
-      style={[
-        styles.notificationItem,
-        !item.isRead && styles.unreadItem,
-      ]}
+      style={[styles.notificationItem, !item.isRead && styles.unreadItem]}
       onPress={() => handleNotificationPress(item)}
-      activeOpacity={0.7}
-    >
+      activeOpacity={0.7}>
       {!item.isRead && <View style={styles.unreadIndicator} />}
-      <View style={[styles.typeIndicator, { backgroundColor: getTypeColor(item.type) }]} />
+      <View
+        style={[
+          styles.typeIndicator,
+          {backgroundColor: getTypeColor(item.type)},
+        ]}
+      />
       <View style={styles.contentContainer}>
         <View style={styles.headerContainer}>
-          <Text style={[styles.title, !item.isRead && styles.unreadTitle]} numberOfLines={1}>
+          <Text
+            style={[styles.title, !item.isRead && styles.unreadTitle]}
+            numberOfLines={1}>
             {item.title}
           </Text>
           <Text style={styles.dateTime}>{formatDateTime(item.dateTime)}</Text>
         </View>
-        <Text style={[styles.message, !item.isRead && styles.unreadMessage]} numberOfLines={2}>
+        <Text
+          style={[styles.message, !item.isRead && styles.unreadMessage]}
+          numberOfLines={2}>
           {item.message}
         </Text>
       </View>
@@ -244,21 +278,26 @@ const NotificationsScreen: React.FC = () => {
   const renderFooter = () => {
     if (!loading) return null;
     return (
-      <View style={{ paddingVertical: 16 }}>
+      <View style={{paddingVertical: 16}}>
         <ActivityIndicator size="large" color={Colors.light.primary} />
       </View>
     );
   };
 
   useEffect(() => {
-    const foregroundNotificationListener = messaging().onMessage(async remoteMessage => {
-      console.log('Notification received in Notification screen foreground:', remoteMessage);
+    const foregroundNotificationListener = messaging().onMessage(
+      async remoteMessage => {
+        console.log(
+          'Notification received in Notification screen foreground:',
+          remoteMessage,
+        );
 
-      // Refresh notifications after 3 seconds
-      setTimeout(() => {
-        handleRefresh();
-      }, 2000);
-    });
+        // Refresh notifications after 3 seconds
+        setTimeout(() => {
+          handleRefresh();
+        }, 2000);
+      },
+    );
 
     return () => {
       // This removes the listener — required!
@@ -272,10 +311,11 @@ const NotificationsScreen: React.FC = () => {
       <FlatList
         data={notifications}
         renderItem={renderNotificationItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
+        extraData={nowTick}
         contentContainerStyle={[
           styles.listContainer,
-          notifications.length === 0 && { flex: 1, justifyContent: 'center' },
+          notifications.length === 0 && {flex: 1, justifyContent: 'center'},
         ]}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -298,7 +338,6 @@ const NotificationsScreen: React.FC = () => {
           );
         }}
       />
-
     </SafeAreaView>
   );
 };
@@ -316,7 +355,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
@@ -406,7 +445,7 @@ const styles = StyleSheet.create({
     elevation: 4,
     shadowColor: '#000',
     shadowOpacity: 0.25,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowRadius: 4,
   },
 
@@ -415,7 +454,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-
 });
 
 export default NotificationsScreen;

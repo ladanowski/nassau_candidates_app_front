@@ -14,48 +14,31 @@ type FloridaVotersRouteParams = {
 };
 
 type VoterItem = {
-    CountyCode?: string;
+    // Known fields used in the UI
     VoterId?: string;
     NameLast?: string;
-    NameSuffix?: string;
     NameFirst?: string;
     NameMiddle?: string;
-    RequestedPublicRecordsExemption?: string;
-    ResidenceAddressLine1?: string;
-    ResidenceAddressLine2?: string;
     ResidenceCity?: string;
-    ResidenceState?: string;
+    ResidenceAddressLine1?: string;
     ResidenceZipcode?: string;
-    MailingAddressLine1?: string;
-    MailingAddressLine2?: string;
-    MailingAddressLine3?: string;
-    MailingCity?: string;
-    MailingState?: string;
-    MailingZipcode?: string;
-    MailingCountry?: string;
-    Gender?: string;
-    Race?: string;
-    BirthDate?: string;
-    RegistrationDate?: string;
     PartyAffiliation?: string;
-    Precinct?: string;
-    PrecinctGroup?: string;
-    PrecinctSplit?: string;
-    PrecinctSuffix?: string;
     VoterStatus?: string;
-    CongressionalDistrict?: string;
-    HouseDistrict?: string;
-    SenateDistrict?: string;
     CountyCommissionDistrict?: string;
     SchoolBoardDistrict?: string;
+    BirthDate?: string;
+    RegistrationDate?: string;
     DaytimeAreaCode?: string;
     DaytimePhoneNumber?: string;
     DaytimePhoneExtension?: string;
     EmailAddress?: string;
+
+    // Allow dynamic columns like election dates: "11/05/2024", etc.
+    [key: string]: any;
 };
 
 type ColumnDef = {
-    key: keyof VoterItem;
+    key: string;
     label: string;
     width: number;
     visible: boolean;
@@ -96,6 +79,7 @@ const FloridaVotersScreen: React.FC = () => {
     const [selectedCity, setSelectedCity] = useState<string>('');
     const [selectedCountyDistrict, setSelectedCountyDistrict] = useState<string>('');
     const [selectedSchoolDistrict, setSelectedSchoolDistrict] = useState<string>('');
+    const [selectedParty, setSelectedParty] = useState<string>('');
     
     const [voters, setVoters] = useState<VoterItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
@@ -105,7 +89,10 @@ const FloridaVotersScreen: React.FC = () => {
     const [showCityDropdown, setShowCityDropdown] = useState(false);
     const [showCountyDropdown, setShowCountyDropdown] = useState(false);
     const [showSchoolDropdown, setShowSchoolDropdown] = useState(false);
+    const [showPartyDropdown, setShowPartyDropdown] = useState(false);
     const [showColumnModal, setShowColumnModal] = useState(false);
+
+    const partyOptions = ['DEM', 'REP', 'Other'];
 
     useEffect(() => {
         const fetchFilterOptions = async () => {
@@ -169,10 +156,15 @@ const FloridaVotersScreen: React.FC = () => {
         setSelectedCountyDistrict('');
     };
 
+    const handlePartySelect = (party: string) => {
+        setSelectedParty(party);
+        // Party is additive; do not clear city/county/school selections.
+    };
+
     useEffect(() => {
         const fetchVoters = async () => {
             // Only fetch if one filter is selected
-            const hasFilter = selectedCity || selectedCountyDistrict || selectedSchoolDistrict;
+            const hasFilter = selectedCity || selectedCountyDistrict || selectedSchoolDistrict || selectedParty;
             if (!hasFilter) {
                 setVoters([]);
                 setError(null);
@@ -187,8 +179,33 @@ const FloridaVotersScreen: React.FC = () => {
                     city: selectedCity || undefined,
                     countyCommissionDistrict: selectedCountyDistrict || undefined,
                     schoolBoardDistrict: selectedSchoolDistrict || undefined,
+                    party: selectedParty
+                        ? (selectedParty.toUpperCase() === 'OTHER'
+                            ? 'OTHER'
+                            : selectedParty.toUpperCase())
+                        : undefined,
                 });
                 setVoters(filteredVoters);
+
+                // Merge any extra keys (including election-date columns like "11/05/2024")
+                // into the selectable columns list (hidden by default).
+                if (Array.isArray(filteredVoters) && filteredVoters.length > 0) {
+                    const firstRow = filteredVoters[0] as any;
+                    const rowKeys = Object.keys(firstRow || {});
+                    setColumns(prev => {
+                        const existing = new Set(prev.map(c => c.key));
+                        const extras = rowKeys
+                            .filter(k => !existing.has(k))
+                            .map((k): ColumnDef => ({
+                                key: k,
+                                label: k,
+                                width: 110,
+                                visible: false,
+                            }));
+                        return extras.length ? [...prev, ...extras] : prev;
+                    });
+                }
+
                 // Clear error if we got results (even if empty array)
                 if (Array.isArray(filteredVoters)) {
                     setError(null);
@@ -203,9 +220,9 @@ const FloridaVotersScreen: React.FC = () => {
         };
 
         fetchVoters();
-    }, [selectedCity, selectedCountyDistrict, selectedSchoolDistrict]);
+    }, [selectedCity, selectedCountyDistrict, selectedSchoolDistrict, selectedParty]);
 
-    const toggleColumnVisibility = (columnKey: keyof VoterItem) => {
+    const toggleColumnVisibility = (columnKey: string) => {
         setColumns(prev => prev.map(col => 
             col.key === columnKey ? { ...col, visible: !col.visible } : col
         ));
@@ -228,7 +245,7 @@ const FloridaVotersScreen: React.FC = () => {
         return `${area}${phone}${ext}`;
     };
 
-    const getCellValue = (voter: VoterItem, columnKey: keyof VoterItem): string => {
+    const getCellValue = (voter: VoterItem, columnKey: string): string => {
         const value = voter[columnKey];
         if (value === null || value === undefined) return '';
         
@@ -456,6 +473,18 @@ const FloridaVotersScreen: React.FC = () => {
                     <svgs.chevronRight width={20} height={20} />
                 </TouchableOpacity>
 
+                {/* Party Dropdown */}
+                <TouchableOpacity
+                    style={styles.dropdownButton}
+                    onPress={() => setShowPartyDropdown(true)}
+                    disabled={loadingFilters}
+                >
+                    <Text style={[styles.dropdownButtonText, !selectedParty && styles.placeholderText]}>
+                        {selectedParty || 'Select Party'}
+                    </Text>
+                    <svgs.chevronRight width={20} height={20} />
+                </TouchableOpacity>
+
                 {/* County Commission District Dropdown */}
                 <TouchableOpacity
                     style={styles.dropdownButton}
@@ -483,6 +512,7 @@ const FloridaVotersScreen: React.FC = () => {
 
             {/* Dropdown Modals */}
             {renderDropdown(showCityDropdown, () => setShowCityDropdown(false), cities, handleCitySelect, selectedCity, 'Select City')}
+            {renderDropdown(showPartyDropdown, () => setShowPartyDropdown(false), partyOptions, handlePartySelect, selectedParty, 'Select Party')}
             {renderDropdown(showCountyDropdown, () => setShowCountyDropdown(false), countyDistricts, handleCountyDistrictSelect, selectedCountyDistrict, 'Select County Commission District')}
             {renderDropdown(showSchoolDropdown, () => setShowSchoolDropdown(false), schoolDistricts, handleSchoolDistrictSelect, selectedSchoolDistrict, 'Select School Board District')}
             {renderColumnSelectionModal()}

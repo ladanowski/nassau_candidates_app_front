@@ -88,11 +88,13 @@ export async function getFilteredVoters(filters: {
   city?: string;
   countyCommissionDistrict?: string;
   schoolBoardDistrict?: string;
+  party?: string; // 'DEM' | 'REP' | 'OTHER'
 }): Promise<VoterItem[]> {
   const params = new URLSearchParams();
   if (filters.city) params.append('city', filters.city);
   if (filters.countyCommissionDistrict) params.append('countyCommissionDistrict', filters.countyCommissionDistrict);
   if (filters.schoolBoardDistrict) params.append('schoolBoardDistrict', filters.schoolBoardDistrict);
+  if (filters.party) params.append('party', filters.party);
   
   const queryString = params.toString();
   const url = queryString ? `${Endpoints.floridaVoters}?${queryString}` : Endpoints.floridaVoters;

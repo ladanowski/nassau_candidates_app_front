@@ -35,9 +35,13 @@ const NotificationDetailsScreen: React.FC = () => {
 
     const [authToken, setAuthToken] = useState<string | null>(null);
 
+    const parseNotificationDate = (dateTime: string): Date => {
+        const hasTz = /([zZ]|[+-]\d{2}:\d{2})$/.test(dateTime.trim());
+        return new Date(hasTz ? dateTime : `${dateTime}Z`);
+    };
+
     const formatFullDateTime = (dateTime: string): string => {
-  // Automatically handles UTC ("Z") or timezone offsets like "+05:00"
-  const date = new Date(dateTime);
+  const date = parseNotificationDate(dateTime);
 
   return date.toLocaleString(undefined, {
     weekday: 'long',
