@@ -113,11 +113,11 @@ const gridItems = [
     label: 'Settings',
   },
   {
-    key: 'Florida Voters',
+    key: 'Voters',
     icon: svgs.optionFloridaVoters,
     url: null,
     routeTo: 'floridaVoters',
-    label: 'Florida Voters',
+    label: 'Voters',
     requiredAuth: true,
   },
 ];

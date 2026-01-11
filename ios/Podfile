@@ -16,6 +16,64 @@ end
 
 use_frameworks! :linkage => :static
 
+# Patch React Native scripts that break when the project path contains spaces.
+# IMPORTANT: this must run while the Podfile is being evaluated (before `use_react_native!`)
+# because some script phases are generated during Podfile parsing.
+rn_root = File.expand_path(File.join(__dir__, '..', 'node_modules', 'react-native'))
+
+script_phases_rb = File.join(rn_root, 'scripts', 'react_native_pods_utils', 'script_phases.rb')
+if File.exist?(script_phases_rb)
+  contents = File.read(script_phases_rb)
+  patched = contents.dup
+
+  # Quote exports so paths with spaces don't get split by the shell.
+  patched.gsub!(
+    /'RCT_SCRIPT_RN_DIR'\s*=>\s*"\$RCT_SCRIPT_POD_INSTALLATION_ROOT\/#\{options\[:react_native_path\]\}"/,
+    "'RCT_SCRIPT_RN_DIR' => \"\\\"$RCT_SCRIPT_POD_INSTALLATION_ROOT/\#{options[:react_native_path]}\\\"\"",
+  )
+  patched.gsub!(
+    /'RCT_SCRIPT_APP_PATH'\s*=>\s*"\$RCT_SCRIPT_POD_INSTALLATION_ROOT\/#\{options\[:relative_app_root\]\}"/,
+    "'RCT_SCRIPT_APP_PATH' => \"\\\"$RCT_SCRIPT_POD_INSTALLATION_ROOT/\#{options[:relative_app_root]}\\\"\"",
+  )
+  patched.gsub!(
+    /'RCT_SCRIPT_OUTPUT_DIR'\s*=>\s*"\$RCT_SCRIPT_POD_INSTALLATION_ROOT"/,
+    "'RCT_SCRIPT_OUTPUT_DIR' => \"\\\"$RCT_SCRIPT_POD_INSTALLATION_ROOT\\\"\"",
+  )
+
+  if patched != contents
+    File.write(script_phases_rb, patched)
+    Pod::UI.puts "Patched React Native script_phases.rb to support spaces in paths".green
+  end
+end
+
+with_env_sh = File.join(rn_root, 'scripts', 'xcode', 'with-environment.sh')
+if File.exist?(with_env_sh)
+  contents = File.read(with_env_sh)
+  patched = contents.gsub(/\n(\s*)\$1\n/, "\n\\1\"$1\"\n")
+  if patched != contents
+    File.write(with_env_sh, patched)
+    Pod::UI.puts "Patched React Native with-environment.sh to quote script invocation".green
+  end
+end
+
+codegen_executor_js = File.join(
+  rn_root,
+  'scripts',
+  'codegen',
+  'generate-artifacts-executor.js',
+)
+if File.exist?(codegen_executor_js)
+  contents = File.read(codegen_executor_js)
+  patched = contents.gsub(
+    %q(/bin/sh -c "$WITH_ENVIRONMENT $SCRIPT_PHASES_SCRIPT"),
+    %q("$WITH_ENVIRONMENT" "$SCRIPT_PHASES_SCRIPT"),
+  )
+  if patched != contents
+    File.write(codegen_executor_js, patched)
+    Pod::UI.puts "Patched React Native generate-artifacts-executor.js to support spaces in paths".green
+  end
+end
+
 target 'candidates_app' do
   config = use_native_modules!
 
@@ -78,6 +136,28 @@ target 'candidates_app' do
           flags = flags.reject { |f| f == '-Werror=non-modular-include-in-framework-module' }
           bc.build_settings[k] = v.is_a?(String) ? flags.join(' ') : flags
         end
+      end
+    end
+
+    # Fix Hermes "error opening archive" when project path contains spaces.
+    # The generated Hermes script calls `tar -xf` without quoting the tarball path.
+    hermes_scripts = Dir.glob(File.join(installer.sandbox.root.to_s, '**', '*hermes*', '*.sh'))
+    hermes_scripts += Dir.glob(File.join(installer.sandbox.root.to_s, '**', '*hermes*', '*.command'))
+    hermes_scripts.uniq.each do |path|
+      next unless File.file?(path)
+
+      contents = File.read(path)
+      next unless contents.include?('tar -xf')
+      next unless contents.include?('hermes')
+
+      # Quote common tarball variable expansions if unquoted.
+      patched = contents
+        .gsub(/tar\s+-xf\s+\$\{?HERMES_TARBALL\}?/,'tar -xf "${HERMES_TARBALL}"')
+        .gsub(/tar\s+-xf\s+\$\{?TARBALL\}?/,'tar -xf "${TARBALL}"')
+        .gsub(/tar\s+-xf\s+\$\{?HERMES_ENGINE_TARBALL\}?/,'tar -xf "${HERMES_ENGINE_TARBALL}"')
+
+      if patched != contents
+        File.write(path, patched)
       end
     end
   end

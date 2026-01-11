@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, Modal, FlatList, Dimensions, Share, Alert } from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, Modal, FlatList, Dimensions, Share, Alert, TextInput } from "react-native";
 import { RouteProp, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
@@ -44,6 +44,8 @@ type ColumnDef = {
     visible: boolean;
 };
 
+type PartyFilter = 'DEM' | 'REP' | 'OTHER';
+
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const FloridaVotersScreen: React.FC = () => {
@@ -75,11 +77,20 @@ const FloridaVotersScreen: React.FC = () => {
     const [cities, setCities] = useState<string[]>([]);
     const [countyDistricts, setCountyDistricts] = useState<string[]>([]);
     const [schoolDistricts, setSchoolDistricts] = useState<string[]>([]);
+    const partyOptions: PartyFilter[] = ['DEM', 'REP', 'OTHER'];
     
     const [selectedCity, setSelectedCity] = useState<string>('');
     const [selectedCountyDistrict, setSelectedCountyDistrict] = useState<string>('');
     const [selectedSchoolDistrict, setSelectedSchoolDistrict] = useState<string>('');
-    const [selectedParty, setSelectedParty] = useState<string>('');
+    const [selectedParty, setSelectedParty] = useState<PartyFilter | ''>('');
+    const [streetQuery, setStreetQuery] = useState<string>('');
+    const [debouncedStreetQuery, setDebouncedStreetQuery] = useState<string>('');
+
+    // Debounce street search so typing (including spaces) stays responsive even with large results.
+    useEffect(() => {
+        const id = setTimeout(() => setDebouncedStreetQuery(streetQuery), 400);
+        return () => clearTimeout(id);
+    }, [streetQuery]);
     
     const [voters, setVoters] = useState<VoterItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
@@ -91,8 +102,6 @@ const FloridaVotersScreen: React.FC = () => {
     const [showSchoolDropdown, setShowSchoolDropdown] = useState(false);
     const [showPartyDropdown, setShowPartyDropdown] = useState(false);
     const [showColumnModal, setShowColumnModal] = useState(false);
-
-    const partyOptions = ['DEM', 'REP', 'Other'];
 
     useEffect(() => {
         const fetchFilterOptions = async () => {
@@ -157,14 +166,15 @@ const FloridaVotersScreen: React.FC = () => {
     };
 
     const handlePartySelect = (party: string) => {
-        setSelectedParty(party);
-        // Party is additive; do not clear city/county/school selections.
+        setSelectedParty((party as PartyFilter) || '');
     };
 
     useEffect(() => {
         const fetchVoters = async () => {
             // Only fetch if one filter is selected
-            const hasFilter = selectedCity || selectedCountyDistrict || selectedSchoolDistrict || selectedParty;
+            const streetTrimmed = debouncedStreetQuery.trim();
+            const hasStreetFilter = streetTrimmed.length >= 2;
+            const hasFilter = selectedCity || selectedCountyDistrict || selectedSchoolDistrict || selectedParty || hasStreetFilter;
             if (!hasFilter) {
                 setVoters([]);
                 setError(null);
@@ -179,11 +189,8 @@ const FloridaVotersScreen: React.FC = () => {
                     city: selectedCity || undefined,
                     countyCommissionDistrict: selectedCountyDistrict || undefined,
                     schoolBoardDistrict: selectedSchoolDistrict || undefined,
-                    party: selectedParty
-                        ? (selectedParty.toUpperCase() === 'OTHER'
-                            ? 'OTHER'
-                            : selectedParty.toUpperCase())
-                        : undefined,
+                    partyAffiliation: selectedParty || undefined,
+                    street: hasStreetFilter ? streetTrimmed : undefined,
                 });
                 setVoters(filteredVoters);
 
@@ -220,7 +227,7 @@ const FloridaVotersScreen: React.FC = () => {
         };
 
         fetchVoters();
-    }, [selectedCity, selectedCountyDistrict, selectedSchoolDistrict, selectedParty]);
+    }, [selectedCity, selectedCountyDistrict, selectedSchoolDistrict, selectedParty, debouncedStreetQuery]);
 
     const toggleColumnVisibility = (columnKey: string) => {
         setColumns(prev => prev.map(col => 
@@ -292,7 +299,15 @@ const FloridaVotersScreen: React.FC = () => {
             
             // Generate filename with timestamp
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-            const filterName = selectedCity || selectedCountyDistrict || selectedSchoolDistrict || 'all';
+            const filterName =
+                [
+                    selectedCity && `city_${selectedCity}`,
+                    selectedCountyDistrict && `county_${selectedCountyDistrict}`,
+                    selectedSchoolDistrict && `school_${selectedSchoolDistrict}`,
+                    selectedParty && `party_${selectedParty}`,
+                ]
+                    .filter(Boolean)
+                    .join('_') || 'all';
             const filename = `florida_voters_${filterName}_${timestamp}.csv`;
 
             // Share the CSV content
@@ -508,6 +523,31 @@ const FloridaVotersScreen: React.FC = () => {
                     </Text>
                     <svgs.chevronRight width={20} height={20} />
                 </TouchableOpacity>
+
+                {/* Party Dropdown */}
+                <TouchableOpacity
+                    style={styles.dropdownButton}
+                    onPress={() => setShowPartyDropdown(true)}
+                    disabled={loadingFilters}
+                >
+                    <Text style={[styles.dropdownButtonText, !selectedParty && styles.placeholderText]}>
+                        {selectedParty || 'Select Party'}
+                    </Text>
+                    <svgs.chevronRight width={20} height={20} />
+                </TouchableOpacity>
+
+                {/* Street Search */}
+                <TextInput
+                    style={styles.textInput}
+                    placeholder="Search street (address line 1 or 2)"
+                    placeholderTextColor="#999"
+                    value={streetQuery}
+                    onChangeText={setStreetQuery}
+                    editable={!loadingFilters}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    clearButtonMode="while-editing"
+                />
             </View>
 
             {/* Dropdown Modals */}
@@ -515,6 +555,7 @@ const FloridaVotersScreen: React.FC = () => {
             {renderDropdown(showPartyDropdown, () => setShowPartyDropdown(false), partyOptions, handlePartySelect, selectedParty, 'Select Party')}
             {renderDropdown(showCountyDropdown, () => setShowCountyDropdown(false), countyDistricts, handleCountyDistrictSelect, selectedCountyDistrict, 'Select County Commission District')}
             {renderDropdown(showSchoolDropdown, () => setShowSchoolDropdown(false), schoolDistricts, handleSchoolDistrictSelect, selectedSchoolDistrict, 'Select School Board District')}
+            {renderDropdown(showPartyDropdown, () => setShowPartyDropdown(false), partyOptions, handlePartySelect, selectedParty, 'Select Party')}
             {renderColumnSelectionModal()}
 
             {/* Loading State */}
@@ -596,6 +637,18 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.light.background,
         borderBottomWidth: 1,
         borderBottomColor: `${Colors.light.primary}20`,
+    },
+    textInput: {
+        backgroundColor: '#fff',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: `${Colors.light.primary}40`,
+        fontSize: 14,
+        fontFamily: 'MyriadPro-Regular',
+        color: Colors.light.text,
     },
     filterHeader: {
         flexDirection: 'row',
