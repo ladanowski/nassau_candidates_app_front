@@ -4,12 +4,20 @@
  * IMPORTANT:
  * - The app was crashing because this file was empty, so imports like `Endpoints`
  *   were `undefined` at runtime (e.g. `Endpoints.loginCandidate`).
- * - Keep `API_BASE_URL` pointed at the Azure host (not localhost).
+ * - In dev, we point `API_BASE_URL` at the local backend to make testing easier.
  */
 
-// Azure API host (Node/Express backend)
-export const API_BASE_URL =
+import {Platform} from 'react-native';
+
+const PROD_API_BASE_URL =
   'https://nassautestingapi-d6gzgzhzamhthuar.eastus-01.azurewebsites.net';
+
+// Local Node/Express backend (see backend `server.js` default PORT=3001)
+const LOCAL_API_BASE_URL = `http://${
+  Platform.OS === 'android' ? '10.0.2.2' : 'localhost'
+}:3001`;
+
+export const API_BASE_URL = __DEV__ ? LOCAL_API_BASE_URL : PROD_API_BASE_URL;
 
 export const RequestConfig = {
   timeoutMs: 240_000, // 4 minutes
