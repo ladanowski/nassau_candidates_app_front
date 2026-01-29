@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   Platform,
   PermissionsAndroid,
@@ -12,33 +12,7 @@ import StorageService from './src/services/StorageService';
 import { StorageKeys } from './src/constants/storage_keys';
 
 const App = () => {
-  useEffect(() => {
-    const initializeApp = async () => {
-      // Request permission
-      await requestUserPermission();
-
-      // Get FCM token
-      await getFCMToken();
-
-      // Handle background/quit state notifications
-      await handleBackgroundNotification();
-
-      // Set up foreground listener
-      const unsubscribe = setupForegroundListener();
-
-      // Listen for token refresh
-      setupTokenRefreshListener();
-
-      // Cleanup function
-      return () => {
-        unsubscribe();
-      };
-    };
-
-    initializeApp();
-  }, []);
-
-  const requestUserPermission = async () => {
+  const requestUserPermission = useCallback(async () => {
     if (Platform.OS === 'ios') {
       const authStatus = await messaging().requestPermission();
       const enabled =
@@ -59,15 +33,63 @@ const App = () => {
       return true;
     }
     return false;
-  };
+  }, []);
 
-  const getFCMToken = async () => {
+  // Handle notification when app is in background or quit state
+  // Handle navigation based on notification data
+  const handleNotificationNavigation = useCallback((remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
+    if (remoteMessage.data?.screen) {
+      console.log('Navigating to screen:', remoteMessage.data.screen);
+      // You can implement navigation logic here
+      // For example, using a navigation ref or context
+      // NavigationService.navigate(remoteMessage.data.screen, remoteMessage.data.params);
+    }
+  }, []);
+
+  const saveTokenToFirestore = useCallback(async (token: string) => {
+    if (!token) return;
+
+    try {
+      const tokenDocId = token.replace(/\//g, '_'); // Avoid invalid Firestore IDs
+      const tokenDocRef = firestore().collection('fcmTokens').doc(tokenDocId);
+
+      const existingDoc = await tokenDocRef.get();
+      const docExists =
+        typeof (existingDoc as any).exists === 'function'
+          ? (existingDoc as any).exists()
+          : (existingDoc as any).exists;
+
+      const deviceInfo = {
+        brand: DeviceInfo.getBrand(),
+        model: DeviceInfo.getModel(),
+        systemName: DeviceInfo.getSystemName(),
+        systemVersion: DeviceInfo.getSystemVersion(),
+        appVersion: DeviceInfo.getVersion(),
+        deviceId: DeviceInfo.getDeviceId(),
+        uniqueId: DeviceInfo.getUniqueId(),
+      };
+
+      const dataToSave = {
+        fcmToken: token,
+        deviceInfo,
+        ...(docExists
+          ? { updatedAt: firestore.FieldValue.serverTimestamp() }
+          : { createdAt: firestore.FieldValue.serverTimestamp() }),
+      };
+
+      await tokenDocRef.set(dataToSave, { merge: true });
+
+      console.log(`FCM token ${docExists ? 'updated' : 'created'} in Firestore`);
+    } catch (error) {
+      console.error(' Error saving FCM token to Firestore:', error);
+    }
+  }, []);
+
+  const getFCMToken = useCallback(async () => {
     try {
       const fcmToken = await messaging().getToken();
       if (fcmToken) {
         console.log('FCM Token:', fcmToken);
-        // Send this token to your backend server
-        // await sendTokenToServer(fcmToken);
         await StorageService.saveItem(StorageKeys.fcmToken, fcmToken);
         saveTokenToFirestore(fcmToken);
         return fcmToken;
@@ -75,10 +97,9 @@ const App = () => {
     } catch (error) {
       console.log('Error getting FCM token:', error);
     }
-  };
+  }, [saveTokenToFirestore]);
 
-  // Handle notification when app is in background or quit state
-  const handleBackgroundNotification = async () => {
+  const handleBackgroundNotification = useCallback(async () => {
     // Handle notification that opened the app from quit state
     const initialNotification = await messaging().getInitialNotification();
     if (initialNotification) {
@@ -91,14 +112,13 @@ const App = () => {
       console.log('Notification caused app to open from background state:', remoteMessage);
       handleNotificationNavigation(remoteMessage);
     });
-  };
+  }, [handleNotificationNavigation]);
 
   // Show local notification instead of Alert
-  const showLocalNotification = (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
+  const showLocalNotification = useCallback((remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
     const { notification, data } = remoteMessage;
 
     console.log('Notification', notification);
-
 
     // Determine priority based on data or notification content
     const priority = data?.priority === 'high' ? 'high' : 'default';
@@ -113,76 +133,49 @@ const App = () => {
       },
       priority,
     );
-  };
+  }, []);
 
-  // Handle foreground notifications - UPDATED
-  const setupForegroundListener = () => {
+  // Handle foreground notifications
+  const setupForegroundListener = useCallback(() => {
     const unsubscribe = messaging().onMessage(async remoteMessage => {
       console.log('Notification received in foreground:', remoteMessage);
-
-      // Show local notification instead of Alert
       showLocalNotification(remoteMessage);
     });
 
     return unsubscribe;
-  };
+  }, [showLocalNotification]);
 
   // Handle token refresh
-  const setupTokenRefreshListener = () => {
+  const setupTokenRefreshListener = useCallback(() => {
     messaging().onTokenRefresh(token => {
       console.log('FCM Token refreshed:', token);
-      // Send updated token to your server
-      // sendTokenToServer(token);
       saveTokenToFirestore(token);
     });
-  };
+  }, [saveTokenToFirestore]);
 
-  // Handle navigation based on notification data
-  const handleNotificationNavigation = (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
-    if (remoteMessage.data?.screen) {
-      console.log('Navigating to screen:', remoteMessage.data.screen);
-      // You can implement navigation logic here
-      // For example, using a navigation ref or context
-      // NavigationService.navigate(remoteMessage.data.screen, remoteMessage.data.params);
-    }
-  };
+  useEffect(() => {
+    let unsubscribeForeground: undefined | (() => void);
 
-  const saveTokenToFirestore = async (token: string) => {
-  if (!token) return;
-
-  try {
-    const tokenDocId = token.replace(/\//g, '_'); // Avoid invalid Firestore IDs
-    const tokenDocRef = firestore().collection('fcmTokens').doc(tokenDocId);
-
-    const existingDoc = await tokenDocRef.get();
-
-    const deviceInfo = {
-      brand: DeviceInfo.getBrand(),
-      model: DeviceInfo.getModel(),
-      systemName: DeviceInfo.getSystemName(),
-      systemVersion: DeviceInfo.getSystemVersion(),
-      appVersion: DeviceInfo.getVersion(),
-      deviceId: DeviceInfo.getDeviceId(),
-      uniqueId: DeviceInfo.getUniqueId(),
+    const initializeApp = async () => {
+      await requestUserPermission();
+      await getFCMToken();
+      await handleBackgroundNotification();
+      unsubscribeForeground = setupForegroundListener();
+      setupTokenRefreshListener();
     };
 
-    const dataToSave = {
-      fcmToken: token,
-      deviceInfo,
-      ...(existingDoc.exists()
-        ? { updatedAt: firestore.FieldValue.serverTimestamp() }
-        : { createdAt: firestore.FieldValue.serverTimestamp() }),
+    initializeApp();
+
+    return () => {
+      if (unsubscribeForeground) unsubscribeForeground();
     };
-
-    await tokenDocRef.set(dataToSave, { merge: true });
-
-    console.log(`FCM token ${existingDoc.exists() ? 'updated' : 'created'} in Firestore`
-    );
-  } catch (error) {
-    console.error(' Error saving FCM token to Firestore:', error);
-  }
-};
-
+  }, [
+    requestUserPermission,
+    getFCMToken,
+    handleBackgroundNotification,
+    setupForegroundListener,
+    setupTokenRefreshListener,
+  ]);
 
   return <AppNavigator />;
 };

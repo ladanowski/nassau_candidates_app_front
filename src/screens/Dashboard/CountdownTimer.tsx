@@ -7,24 +7,24 @@ interface CountdownTimerProps {
     label: string;
 }
 
-const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, label }) => {
-    const [timeLeft, setTimeLeft] = useState(getTimeLeft());
+function computeTimeLeft(targetDate: Date) {
+    const now = new Date();
+    const diff = targetDate.getTime() - now.getTime();
+    const totalSeconds = Math.max(0, Math.floor(diff / 1000));
+    const days = Math.floor(totalSeconds / (24 * 3600));
+    const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return { days, hours, minutes, seconds, totalSeconds };
+}
 
-    function getTimeLeft() {
-        const now = new Date();
-        const diff = targetDate.getTime() - now.getTime();
-        const totalSeconds = Math.max(0, Math.floor(diff / 1000));
-        const days = Math.floor(totalSeconds / (24 * 3600));
-        const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        return { days, hours, minutes, seconds, totalSeconds };
-    }
+const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, label }) => {
+    const [timeLeft, setTimeLeft] = useState(() => computeTimeLeft(targetDate));
 
     useEffect(() => {
-        const timer = setInterval(() => setTimeLeft(getTimeLeft()), 1000);
+        const timer = setInterval(() => setTimeLeft(computeTimeLeft(targetDate)), 1000);
         return () => clearInterval(timer);
-    }, []);
+    }, [targetDate]);
 
     let displayValue = '';
     let displayLabel = '';

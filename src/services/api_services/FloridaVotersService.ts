@@ -88,15 +88,30 @@ export async function getFilteredVoters(filters: {
   city?: string;
   countyCommissionDistrict?: string;
   schoolBoardDistrict?: string;
+  // Backwards compatible: some builds used `party`; newer uses `partyAffiliation`
+  party?: string;
+  partyAffiliation?: 'DEM' | 'REP' | 'OTHER';
+  street?: string;
 }): Promise<VoterItem[]> {
   const params = new URLSearchParams();
   if (filters.city) params.append('city', filters.city);
   if (filters.countyCommissionDistrict) params.append('countyCommissionDistrict', filters.countyCommissionDistrict);
   if (filters.schoolBoardDistrict) params.append('schoolBoardDistrict', filters.schoolBoardDistrict);
+
+  const party = (filters.partyAffiliation ?? filters.party)?.toString();
+  if (party) {
+    // Send both keys so either backend implementation works
+    params.append('partyAffiliation', party);
+    params.append('party', party);
+  }
+
+  if (filters.street) params.append('street', filters.street);
   
   const queryString = params.toString();
   const url = queryString ? `${Endpoints.floridaVoters}?${queryString}` : Endpoints.floridaVoters;
+  // React Native fetch can fail on URLs with unescaped spaces; ensure the final URL is safe.
+  const safeUrl = encodeURI(url);
   
-  const res = await ApiClient.get<VotersResponse>(url);
+  const res = await ApiClient.get<VotersResponse>(safeUrl);
   return res.success && Array.isArray(res.data) ? res.data : [];
 }

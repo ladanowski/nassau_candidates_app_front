@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Modal } from "react-native";
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
@@ -44,13 +44,7 @@ const SettingsScreen: React.FC = () => {
     checkAuthToken();
   }, []);
 
-
-  useEffect(() => {
-    if (!authToken) return;
-    fetchSettings();
-  }, [authToken]);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       const settings = await getSettings();
       setIsFinanceReport(settings?.CampaignFinance || false);
@@ -58,7 +52,6 @@ const SettingsScreen: React.FC = () => {
       setIsMiscellaneousInfo(settings?.Misc || false);
       setIsPetitionBatchUpdate(settings?.Petitions || false);
       setIsQualifying(settings?.Qualifying || false);
-
     } catch (error: any) {
       if (error?.status === 401 || error?.status === 403) {
         Alert.alert('Session expired', error.message || 'Please login again.');
@@ -69,7 +62,12 @@ const SettingsScreen: React.FC = () => {
         return;
       }
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!authToken) return;
+    fetchSettings();
+  }, [authToken, fetchSettings]);
 
   // Handler for updating settings
   const updateSingleSetting = async (
@@ -105,6 +103,9 @@ const SettingsScreen: React.FC = () => {
   const resetAuthAndSwitches = async (options?: { promptLogin?: boolean }) => {
     await StorageService.removeItem(StorageKeys.authToken);
     await StorageService.removeItem(StorageKeys.candidateId);
+    await StorageService.removeItem(StorageKeys.userName);
+    await StorageService.removeItem(StorageKeys.userEmail);
+    await StorageService.removeItem(StorageKeys.userPhone);
     setAuthToken(null);
 
     // reset switches
@@ -132,7 +133,7 @@ const SettingsScreen: React.FC = () => {
         {
           text: "Yes",
           onPress: async () => {
-            const data = await logoutCandidate();
+            await logoutCandidate();
             
             await resetAuthAndSwitches();
           }
@@ -190,6 +191,35 @@ const SettingsScreen: React.FC = () => {
             await StorageService.saveItem(StorageKeys.authToken, data.token);
             setAuthToken(data.token);
             await StorageService.saveItem(StorageKeys.candidateId, data.user?.id);
+
+            // Store user details (best-effort) for Contact Us prefills
+            const firstName =
+              (data.user?.firstName ??
+                data.user?.FirstName ??
+                data.user?.fname ??
+                '') as string;
+            const lastName =
+              (data.user?.lastName ??
+                data.user?.LastName ??
+                data.user?.lname ??
+                '') as string;
+            const fullName =
+              (data.user?.name ??
+                data.user?.fullName ??
+                `${firstName} ${lastName}`.trim()) as string;
+
+            const email =
+              (data.user?.email ?? data.user?.Email ?? data.email ?? '') as string;
+            const phone =
+              (data.user?.phone ??
+                data.user?.phoneNumber ??
+                data.user?.Phone ??
+                data.user?.PhoneNumber ??
+                '') as string;
+
+            if (fullName) await StorageService.saveItem(StorageKeys.userName, fullName);
+            if (email) await StorageService.saveItem(StorageKeys.userEmail, email);
+            if (phone) await StorageService.saveItem(StorageKeys.userPhone, phone);
 
             // fetch settings
             fetchSettings();

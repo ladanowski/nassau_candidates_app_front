@@ -105,7 +105,20 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
 
   override func bundleURL() -> URL? {
 #if DEBUG
-    RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
+    // `RCTBundleURLProvider` can (rarely) return nil if its settings haven't been initialized
+    // or if it cannot determine a packager host. When that happens, React Native throws:
+    // "No script URL provided... unsanitizedScriptURLString = (null)".
+    //
+    // We keep the provider as the primary path, but add a deterministic fallback that matches
+    // this project’s Metro port (8082) and supports overriding via env vars.
+    if let url = RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index") {
+      return url
+    }
+
+    let env = ProcessInfo.processInfo.environment
+    let host = env["RCT_METRO_HOST"] ?? "localhost"
+    let port = env["RCT_METRO_PORT"] ?? env["METRO_PORT"] ?? "8082"
+    return URL(string: "http://\(host):\(port)/index.bundle?platform=ios&dev=true&minify=false")
 #else
     Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif

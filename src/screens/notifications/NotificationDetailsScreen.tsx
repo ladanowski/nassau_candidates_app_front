@@ -6,7 +6,7 @@ import {
     ScrollView,
     StyleSheet,
 } from 'react-native';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { RouteProp, useRoute } from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import { globalStyles } from '../../styles/globalStyles';
 import { Colors } from '../../constants/colors';
@@ -35,9 +35,13 @@ const NotificationDetailsScreen: React.FC = () => {
 
     const [authToken, setAuthToken] = useState<string | null>(null);
 
+    const parseNotificationDate = (dateTime: string): Date => {
+        const hasTz = /([zZ]|[+-]\d{2}:\d{2})$/.test(dateTime.trim());
+        return new Date(hasTz ? dateTime : `${dateTime}Z`);
+    };
+
     const formatFullDateTime = (dateTime: string): string => {
-  // Automatically handles UTC ("Z") or timezone offsets like "+05:00"
-  const date = new Date(dateTime);
+  const date = parseNotificationDate(dateTime);
 
   return date.toLocaleString(undefined, {
     weekday: 'long',
@@ -106,7 +110,7 @@ const NotificationDetailsScreen: React.FC = () => {
     useEffect(() => {
         if (!authToken || notification.isRead) return;
         markNotificationAsRead(notification.id);
-    }, [authToken]);
+    }, [authToken, notification.id, notification.isRead]);
 
     return (
         <SafeAreaView style={globalStyles.safeAreaContainer}>
