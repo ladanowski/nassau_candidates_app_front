@@ -34,6 +34,7 @@ export const Endpoints = {
   notificationUnreadCount: '/api/notifications/unread-count',
   logout: '/api/auth/LogoutCandidate',
   contactUs: '/api/contact',
+  calendarBusy: '/api/calendar/busy',
   floridaVoters: '/api/floridaVoters',
   selectCitys: '/api/selectCitys',
   selectCountyCommissionDistrict: '/api/selectCountyCommissionDistrict',

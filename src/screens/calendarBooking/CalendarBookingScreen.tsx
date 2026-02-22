@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,10 @@ import firestore from '@react-native-firebase/firestore';
 import LoginPopup from '../../components/LoginPopup';
 import StorageService from '../../services/StorageService';
 import { StorageKeys } from '../../constants/storage_keys';
+import {
+  BusyInterval,
+  getOffice365BusyIntervals,
+} from '../../services/api_services/CalendarAvailabilityService';
 
 type CalendarBookingRouteParams = {
   calendarBooking: {
@@ -27,6 +31,9 @@ type CalendarBookingRouteParams = {
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const APPOINTMENT_DURATION_MINUTES = 45;
+const SLOT_INTERVAL_MINUTES = 15;
+const EASTERN_TIMEZONE = 'America/New_York';
 
 type ScheduledAppointment = {
   id: string;
@@ -96,7 +103,7 @@ const getSlotsCoveredByAppointment = (
 ): string[] => {
   const slots: string[] = [];
   const startMinutes = timeToMinutes(startTime);
-  const slotInterval = 15; // 15-minute slots
+  const slotInterval = SLOT_INTERVAL_MINUTES;
 
   // Add all 15-minute slots that fall within the appointment duration
   for (let offset = 0; offset < durationMinutes; offset += slotInterval) {
@@ -106,6 +113,125 @@ const getSlotsCoveredByAppointment = (
   }
 
   return slots;
+};
+
+const getTimeZoneOffsetMinutes = (date: Date, timeZone: string): number => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(date);
+
+  const values: Record<string, string> = {};
+  parts.forEach(part => {
+    if (part.type !== 'literal') {
+      values[part.type] = part.value;
+    }
+  });
+
+  const utcTimeFromTzParts = Date.UTC(
+    Number(values.year),
+    Number(values.month) - 1,
+    Number(values.day),
+    Number(values.hour),
+    Number(values.minute),
+    Number(values.second),
+  );
+
+  return (utcTimeFromTzParts - date.getTime()) / 60000;
+};
+
+const zonedDateTimeToUtc = (
+  year: number,
+  monthIndexZeroBased: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+  timeZone: string,
+): Date => {
+  // Start with a UTC guess, then adjust by the timezone offset at that instant.
+  const utcGuess = new Date(
+    Date.UTC(year, monthIndexZeroBased, day, hour, minute, second, 0),
+  );
+  const offsetMinutes = getTimeZoneOffsetMinutes(utcGuess, timeZone);
+  return new Date(utcGuess.getTime() - offsetMinutes * 60000);
+};
+
+const getEasternDayUtcRange = (date: Date): { startIso: string; endIso: string } => {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+
+  const start = zonedDateTimeToUtc(year, month, day, 0, 0, 0, EASTERN_TIMEZONE);
+  const end = zonedDateTimeToUtc(year, month, day, 23, 59, 59, EASTERN_TIMEZONE);
+  return { startIso: start.toISOString(), endIso: end.toISOString() };
+};
+
+const intervalsOverlap = (
+  startA: Date,
+  endA: Date,
+  startB: Date,
+  endB: Date,
+): boolean => {
+  return startA < endB && endA > startB;
+};
+
+const getOfficeBusySlotsForDate = (
+  date: Date | null,
+  allSlots: string[],
+  busyIntervals: BusyInterval[],
+): Set<string> => {
+  if (!date || busyIntervals.length === 0) {
+    return new Set();
+  }
+
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+
+  const parsedBusyIntervals = busyIntervals
+    .map(interval => ({
+      start: new Date(interval.start),
+      end: new Date(interval.end),
+    }))
+    .filter(interval => !Number.isNaN(interval.start.getTime()) && !Number.isNaN(interval.end.getTime()));
+
+  const blockedSlots = new Set<string>();
+
+  allSlots.forEach(slot => {
+    const slotStartMinutes = timeToMinutes(slot);
+    const slotHour = Math.floor(slotStartMinutes / 60);
+    const slotMinute = slotStartMinutes % 60;
+
+    const slotStart = zonedDateTimeToUtc(
+      year,
+      month,
+      day,
+      slotHour,
+      slotMinute,
+      0,
+      EASTERN_TIMEZONE,
+    );
+    const slotEnd = new Date(
+      slotStart.getTime() + APPOINTMENT_DURATION_MINUTES * 60 * 1000,
+    );
+
+    const hasOverlap = parsedBusyIntervals.some(interval =>
+      intervalsOverlap(slotStart, slotEnd, interval.start, interval.end),
+    );
+
+    if (hasOverlap) {
+      blockedSlots.add(slot);
+    }
+  });
+
+  return blockedSlots;
 };
 
 // Get day name from date (monday, tuesday, etc.)
@@ -255,6 +381,9 @@ const CalendarBookingScreen: React.FC = () => {
   // Existing appointments for the selected date
   const [existingAppointments, setExistingAppointments] = useState<Set<string>>(new Set());
   const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [officeBusyIntervals, setOfficeBusyIntervals] = useState<BusyInterval[]>([]);
+  const [loadingOfficeBusy, setLoadingOfficeBusy] = useState(false);
+  const [officeBusyError, setOfficeBusyError] = useState<string | null>(null);
 
   // Upcoming scheduled appointments (today+)
   const [scheduledAppointments, setScheduledAppointments] = useState<ScheduledAppointment[]>([]);
@@ -263,7 +392,7 @@ const CalendarBookingScreen: React.FC = () => {
   const [scheduledAppointmentsLastDoc, setScheduledAppointmentsLastDoc] = useState<any>(null);
   const [scheduledAppointmentsHasMore, setScheduledAppointmentsHasMore] = useState(true);
 
-  const allTimeSlots = generateTimeSlots();
+  const allTimeSlots = useMemo(() => generateTimeSlots(), []);
   const weeksInMonth = getDaysInMonth(currentMonth.getFullYear(), currentMonth.getMonth());
 
   const formatScheduledApptDateTime = (appt: ScheduledAppointment): string => {
@@ -448,7 +577,7 @@ const CalendarBookingScreen: React.FC = () => {
         snapshot.docs.forEach(doc => {
           const data = doc.data();
           const appointmentTime = data.selectedTime; // e.g., "10:00 AM"
-          const duration = data.duration || 45; // Default to 45 minutes if not specified
+          const duration = data.duration || APPOINTMENT_DURATION_MINUTES;
 
           if (appointmentTime) {
             // Get all 15-minute slots covered by this appointment
@@ -471,6 +600,45 @@ const CalendarBookingScreen: React.FC = () => {
     fetchAppointments();
   }, [selectedDate]);
 
+  const fetchOfficeBusyForDate = async (date: Date) => {
+    setLoadingOfficeBusy(true);
+    setOfficeBusyError(null);
+    try {
+      const { startIso, endIso } = getEasternDayUtcRange(date);
+      const intervals = await getOffice365BusyIntervals(startIso, endIso);
+      setOfficeBusyIntervals(intervals);
+    } catch (error) {
+      console.error('Failed to fetch Office 365 busy intervals:', error);
+      setOfficeBusyIntervals([]);
+      setOfficeBusyError(
+        'Office 365 calendar is temporarily unavailable. Please try again in a moment.',
+      );
+    } finally {
+      setLoadingOfficeBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setOfficeBusyIntervals([]);
+      setOfficeBusyError(null);
+      return;
+    }
+
+    fetchOfficeBusyForDate(selectedDate);
+  }, [selectedDate]);
+
+  const officeBusySlots = useMemo(
+    () => getOfficeBusySlotsForDate(selectedDate, allTimeSlots, officeBusyIntervals),
+    [selectedDate, allTimeSlots, officeBusyIntervals],
+  );
+
+  const combinedBookedSlots = useMemo(() => {
+    const merged = new Set(existingAppointments);
+    officeBusySlots.forEach(slot => merged.add(slot));
+    return merged;
+  }, [existingAppointments, officeBusySlots]);
+
   // Filter time slots based on selected date, restrictions, and existing appointments
   const getAvailableTimeSlots = (): { slot: string; isBooked: boolean }[] => {
     if (!selectedDate) {
@@ -487,7 +655,7 @@ const CalendarBookingScreen: React.FC = () => {
     if (restriction) {
       const beginMinutes = timeToMinutes(restriction.begin);
       const endMinutes = timeToMinutes(restriction.end);
-      const appointmentDuration = 45; // 45-minute appointments
+      const appointmentDuration = APPOINTMENT_DURATION_MINUTES;
 
       filteredSlots = allTimeSlots.filter(slot => {
         const slotMinutes = timeToMinutes(slot);
@@ -499,10 +667,10 @@ const CalendarBookingScreen: React.FC = () => {
       });
     }
 
-    // Mark slots as booked if they exist in existingAppointments
+    // Mark slots as booked from both Firestore appointments and Office 365 events.
     return filteredSlots.map(slot => ({
       slot,
-      isBooked: existingAppointments.has(slot),
+      isBooked: combinedBookedSlots.has(slot),
     }));
   };
 
@@ -520,10 +688,15 @@ const CalendarBookingScreen: React.FC = () => {
     if (!selectedTime) {
       newErrors.time = 'Please select a time';
     } else {
+      if (officeBusyError) {
+        newErrors.time =
+          'Calendar availability is temporarily unavailable. Please retry before finalizing booking.';
+      }
+
       // Check if any of the slots that would be covered by this appointment are already booked
-      const appointmentDuration = 45; // 45-minute appointments
+      const appointmentDuration = APPOINTMENT_DURATION_MINUTES;
       const slotsThatWouldBeCovered = getSlotsCoveredByAppointment(selectedTime, appointmentDuration);
-      const conflictingSlots = slotsThatWouldBeCovered.filter(slot => existingAppointments.has(slot));
+      const conflictingSlots = slotsThatWouldBeCovered.filter(slot => combinedBookedSlots.has(slot));
 
       if (conflictingSlots.length > 0) {
         newErrors.time =
@@ -569,7 +742,7 @@ const CalendarBookingScreen: React.FC = () => {
         email: userEmail || '',
         phone: userPhone || '',
         appointmentType: 'Candidate Pre-Qualifying / Qualifying',
-        duration: 45,
+        duration: APPOINTMENT_DURATION_MINUTES,
         location: 'Candidate Conference Room',
         address: '96135 Nassau Place, Suite 3, Yulee, FL 32097',
         selectedDate: selectedDateTimestamp,
@@ -587,8 +760,16 @@ const CalendarBookingScreen: React.FC = () => {
       // Refresh upcoming scheduled list so the new booking appears.
       fetchScheduledAppointments({ reset: true });
 
-      // Add the booked time to existing appointments to immediately reflect in UI
-      setExistingAppointments(prev => new Set([...prev, selectedTime!]));
+      // Add all 15-minute covered slots to refresh local availability immediately.
+      setExistingAppointments(prev => {
+        const updated = new Set(prev);
+        const coveredSlots = getSlotsCoveredByAppointment(
+          selectedTime!,
+          APPOINTMENT_DURATION_MINUTES,
+        );
+        coveredSlots.forEach(slot => updated.add(slot));
+        return updated;
+      });
 
       // Verify the document was created by reading it back
       const savedDoc = await docRef.get();
@@ -656,9 +837,9 @@ const CalendarBookingScreen: React.FC = () => {
 
   const handleTimeSelect = (time: string) => {
     // Check if any of the slots that would be covered by this appointment are already booked
-    const appointmentDuration = 45; // 45-minute appointments
+    const appointmentDuration = APPOINTMENT_DURATION_MINUTES;
     const slotsThatWouldBeCovered = getSlotsCoveredByAppointment(time, appointmentDuration);
-    const conflictingSlots = slotsThatWouldBeCovered.filter(slot => existingAppointments.has(slot));
+    const conflictingSlots = slotsThatWouldBeCovered.filter(slot => combinedBookedSlots.has(slot));
 
     if (conflictingSlots.length > 0) {
       Alert.alert(
@@ -790,7 +971,7 @@ const CalendarBookingScreen: React.FC = () => {
   };
 
   const renderTimeSlots = () => {
-    if (loadingTimeRestrictions || loadingAppointments) {
+    if (loadingTimeRestrictions || loadingAppointments || loadingOfficeBusy) {
       return (
         <View style={styles.timeSlotsContainer}>
           <Text style={styles.sectionTitle}>Select a Time</Text>
@@ -805,6 +986,22 @@ const CalendarBookingScreen: React.FC = () => {
         <View style={styles.timeSlotsContainer}>
           <Text style={styles.sectionTitle}>Select a Time</Text>
           <Text style={styles.infoText}>Please select a date first to see available times</Text>
+        </View>
+      );
+    }
+
+    if (officeBusyError) {
+      return (
+        <View style={styles.timeSlotsContainer}>
+          <Text style={styles.sectionTitle}>Select a Time</Text>
+          <Text style={styles.errorText}>{officeBusyError}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => selectedDate && fetchOfficeBusyForDate(selectedDate)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.retryButtonText}>Retry loading availability</Text>
+          </TouchableOpacity>
         </View>
       );
     }
@@ -1087,6 +1284,19 @@ const styles = StyleSheet.create({
   loadMoreButtonText: {
     color: '#fff',
     fontSize: 14,
+    fontFamily: 'MyriadPro-Bold',
+  },
+  retryButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 13,
     fontFamily: 'MyriadPro-Bold',
   },
   appointmentDetailsContainer: {
