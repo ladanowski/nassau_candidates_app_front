@@ -19,6 +19,10 @@ import firestore from '@react-native-firebase/firestore';
 import LoginPopup from '../../components/LoginPopup';
 import StorageService from '../../services/StorageService';
 import { StorageKeys } from '../../constants/storage_keys';
+import {
+  BusyInterval,
+  getOffice365BusyIntervals,
+} from '../../services/api_services/CalendarAvailabilityService';
 
 type CalendarBookingRouteParams = {
   calendarBooking: {
@@ -106,6 +110,58 @@ const getSlotsCoveredByAppointment = (
   }
 
   return slots;
+};
+
+// Convert Office365 busy intervals into local 15-minute slots for the selected date.
+const getSlotsCoveredByOfficeBusyIntervals = (
+  selectedDate: Date,
+  intervals: BusyInterval[],
+): Set<string> => {
+  const bookedSlots = new Set<string>();
+  const dayStart = new Date(selectedDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const slotIntervalMs = 15 * 60 * 1000;
+
+  intervals.forEach(interval => {
+    const busyStart = new Date(interval.start);
+    const busyEnd = new Date(interval.end);
+    if (Number.isNaN(busyStart.getTime()) || Number.isNaN(busyEnd.getTime()) || busyEnd <= busyStart) {
+      return;
+    }
+
+    const firstPotentialSlot = new Date(
+      dayStart.getFullYear(),
+      dayStart.getMonth(),
+      dayStart.getDate(),
+      9,
+      0,
+      0,
+      0,
+    );
+    const lastPotentialSlot = new Date(
+      dayStart.getFullYear(),
+      dayStart.getMonth(),
+      dayStart.getDate(),
+      17,
+      0,
+      0,
+      0,
+    );
+
+    for (
+      let slotStart = new Date(firstPotentialSlot);
+      slotStart <= lastPotentialSlot;
+      slotStart = new Date(slotStart.getTime() + slotIntervalMs)
+    ) {
+      const slotEnd = new Date(slotStart.getTime() + slotIntervalMs);
+      const overlapsBusyInterval = busyStart < slotEnd && busyEnd > slotStart;
+      if (!overlapsBusyInterval) continue;
+
+      bookedSlots.add(minutesToTime(slotStart.getHours() * 60 + slotStart.getMinutes()));
+    }
+  });
+
+  return bookedSlots;
 };
 
 // Get day name from date (monday, tuesday, etc.)
@@ -436,13 +492,26 @@ const CalendarBookingScreen: React.FC = () => {
         const startTimestamp = firestore.Timestamp.fromDate(selectedDateStart);
         const endTimestamp = firestore.Timestamp.fromDate(selectedDateEnd);
 
+        const officeBusyPromise = getOffice365BusyIntervals(
+          selectedDateStart.toISOString(),
+          selectedDateEnd.toISOString(),
+        ).catch(error => {
+          console.error('Failed to fetch Office365 busy intervals:', error);
+          return [];
+        });
+
         // Query appointments for the selected date
-        const snapshot = await firestore()
+        const appointmentsPromise = firestore()
           .collection('appointments')
           .where('selectedDate', '>=', startTimestamp)
           .where('selectedDate', '<=', endTimestamp)
           .where('status', '==', 'scheduled')
           .get();
+
+        const [snapshot, officeBusyIntervals] = await Promise.all([
+          appointmentsPromise,
+          officeBusyPromise,
+        ]);
 
         const bookedTimes = new Set<string>();
         snapshot.docs.forEach(doc => {
@@ -457,6 +526,14 @@ const CalendarBookingScreen: React.FC = () => {
               bookedTimes.add(slot);
             });
           }
+        });
+
+        const officeBusySlots = getSlotsCoveredByOfficeBusyIntervals(
+          selectedDateStart,
+          officeBusyIntervals,
+        );
+        officeBusySlots.forEach(slot => {
+          bookedTimes.add(slot);
         });
 
         setExistingAppointments(bookedTimes);

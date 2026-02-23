@@ -4,7 +4,7 @@
  * IMPORTANT:
  * - The app was crashing because this file was empty, so imports like `Endpoints`
  *   were `undefined` at runtime (e.g. `Endpoints.loginCandidate`).
- * - In dev, we point `API_BASE_URL` at the local backend to make testing easier.
+ * - Default target is Azure. Flip one flag below to use local backend.
  */
 
 import {Platform} from 'react-native';
@@ -17,7 +17,13 @@ const LOCAL_API_BASE_URL = `http://${
   Platform.OS === 'android' ? '10.0.2.2' : 'localhost'
 }:3001`;
 
-export const API_BASE_URL = __DEV__ ? LOCAL_API_BASE_URL : PROD_API_BASE_URL;
+// Keep Azure as the default for all builds.
+// Set to `true` when you intentionally want to test local backend.
+const USE_LOCAL_BACKEND = false;
+
+export const API_BASE_URL = USE_LOCAL_BACKEND
+  ? LOCAL_API_BASE_URL
+  : PROD_API_BASE_URL;
 
 export const RequestConfig = {
   timeoutMs: 240_000, // 4 minutes
