@@ -10,7 +10,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
-import {useNavigation, NavigationProp, RouteProp, useRoute} from '@react-navigation/native';
+import {
+  useNavigation,
+  NavigationProp,
+  RouteProp,
+  useRoute,
+} from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
 import Button from '../../components/Button';
 import {Colors} from '../../constants/colors';
@@ -38,6 +43,7 @@ const ContactUsScreen: React.FC = () => {
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [candidateId, setCandidateId] = useState<string | null>(null);
 
+  const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
 
   const displayName = useMemo(() => (userName ?? '').trim(), [userName]);
@@ -71,6 +77,7 @@ const ContactUsScreen: React.FC = () => {
   }, []);
 
   const onSubmit = async () => {
+    const trimmedSubject = subject.trim();
     const trimmed = message.trim();
     if (!trimmed) {
       Alert.alert('Contact Us', 'Please enter a message.');
@@ -85,12 +92,15 @@ const ContactUsScreen: React.FC = () => {
     setSubmitting(true);
     try {
       const emailRecipient = 'mfranzese@votenassaufl.gov'; // TODO: change if you want a different recipient
-      const emailSubject = 'Contact Us';
+      const emailSubject = trimmedSubject
+        ? `Contact Us - ${trimmedSubject}`
+        : 'Contact Us';
       const emailBody =
         `New Contact Us submission\n\n` +
         `Name: ${displayName || ''}\n` +
         `Email: ${userEmail || ''}\n` +
         `Phone: ${userPhone || ''}\n` +
+        `Subject: ${trimmedSubject || ''}\n` +
         `CandidateId: ${candidateId || ''}\n\n` +
         `Message:\n${trimmed}\n`;
 
@@ -100,6 +110,7 @@ const ContactUsScreen: React.FC = () => {
           name: displayName || '',
           email: userEmail || '',
           phone: userPhone || '',
+          subject: trimmedSubject,
           message: trimmed,
           candidateId: candidateId || '',
           source: 'mobile',
@@ -120,6 +131,7 @@ const ContactUsScreen: React.FC = () => {
         console.warn('ContactUs email notification failed:', emailErr);
       }
 
+      setSubject('');
       setMessage('');
       Alert.alert(
         'Message Sent',
@@ -187,6 +199,18 @@ const ContactUsScreen: React.FC = () => {
                 editable={false}
                 placeholder="Not on file"
                 placeholderTextColor={Colors.light.text + '80'}
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Subject</Text>
+              <TextInput
+                style={styles.input}
+                value={subject}
+                onChangeText={setSubject}
+                placeholder="Enter subject (optional)"
+                placeholderTextColor={Colors.light.text + '80'}
+                editable={!submitting}
               />
             </View>
 

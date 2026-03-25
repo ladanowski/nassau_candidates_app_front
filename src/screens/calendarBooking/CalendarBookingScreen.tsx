@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -11,16 +11,17 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
 import AppBar from '../../components/AppBar';
-import { globalStyles } from '../../styles/globalStyles';
-import { Colors } from '../../constants/colors';
+import {globalStyles} from '../../styles/globalStyles';
+import {Colors} from '../../constants/colors';
 import firestore from '@react-native-firebase/firestore';
 import LoginPopup from '../../components/LoginPopup';
 import StorageService from '../../services/StorageService';
-import { StorageKeys } from '../../constants/storage_keys';
+import {StorageKeys} from '../../constants/storage_keys';
 import {
   BusyInterval,
+  createOffice365CalendarEvent,
   getOffice365BusyIntervals,
 } from '../../services/api_services/CalendarAvailabilityService';
 
@@ -31,19 +32,6 @@ type CalendarBookingRouteParams = {
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-
-type ScheduledAppointment = {
-  id: string;
-  userId?: number | null;
-  name?: string;
-  email?: string;
-  phone?: string;
-  notes?: string;
-  selectedDate?: any; // Firestore Timestamp
-  selectedDateString?: string; // YYYY-MM-DD
-  selectedTime?: string; // "10:00 AM"
-  status?: string;
-};
 
 // Generate time slots with 15-minute intervals (9:00 AM to 5:00 PM)
 const generateTimeSlots = (): string[] => {
@@ -84,10 +72,10 @@ const minutesToTime = (minutes: number): string => {
     hours24 === 12
       ? 12
       : hours24 === 0
-        ? 12
-        : hours24 > 12
-          ? hours24 - 12
-          : hours24;
+      ? 12
+      : hours24 > 12
+      ? hours24 - 12
+      : hours24;
   const period = hours24 >= 12 ? 'PM' : 'AM';
   return `${hour12}:${mins.toString().padStart(2, '0')} ${period}`;
 };
@@ -125,7 +113,11 @@ const getSlotsCoveredByOfficeBusyIntervals = (
   intervals.forEach(interval => {
     const busyStart = new Date(interval.start);
     const busyEnd = new Date(interval.end);
-    if (Number.isNaN(busyStart.getTime()) || Number.isNaN(busyEnd.getTime()) || busyEnd <= busyStart) {
+    if (
+      Number.isNaN(busyStart.getTime()) ||
+      Number.isNaN(busyEnd.getTime()) ||
+      busyEnd <= busyStart
+    ) {
       return;
     }
 
@@ -157,7 +149,9 @@ const getSlotsCoveredByOfficeBusyIntervals = (
       const overlapsBusyInterval = busyStart < slotEnd && busyEnd > slotStart;
       if (!overlapsBusyInterval) continue;
 
-      bookedSlots.add(minutesToTime(slotStart.getHours() * 60 + slotStart.getMinutes()));
+      bookedSlots.add(
+        minutesToTime(slotStart.getHours() * 60 + slotStart.getMinutes()),
+      );
     }
   });
 
@@ -177,7 +171,11 @@ const getDayName = (date: Date): string => {
     'saturday',
   ];
   // Create a normalized date at midnight local time to ensure correct day calculation
-  const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const normalizedDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
   const dayIndex = normalizedDate.getDay();
   const dayName = days[dayIndex];
   if (__DEV__) {
@@ -274,9 +272,10 @@ const isToday = (date: Date): boolean => {
 };
 
 const CalendarBookingScreen: React.FC = () => {
-  const route = useRoute<RouteProp<CalendarBookingRouteParams, 'calendarBooking'>>();
+  const route =
+    useRoute<RouteProp<CalendarBookingRouteParams, 'calendarBooking'>>();
   const navigation = useNavigation();
-  const { title } = route.params;
+  const {title} = route.params;
 
   // Calendar state - start with current month
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -304,114 +303,21 @@ const CalendarBookingScreen: React.FC = () => {
 
   // Time restrictions from Firestore
   const [timeRestrictions, setTimeRestrictions] = useState<
-    Record<string, { begin: string; end: string }>
+    Record<string, {begin: string; end: string}>
   >({});
   const [loadingTimeRestrictions, setLoadingTimeRestrictions] = useState(true);
 
   // Existing appointments for the selected date
-  const [existingAppointments, setExistingAppointments] = useState<Set<string>>(new Set());
+  const [existingAppointments, setExistingAppointments] = useState<Set<string>>(
+    new Set(),
+  );
   const [loadingAppointments, setLoadingAppointments] = useState(false);
 
-  // Upcoming scheduled appointments (today+)
-  const [scheduledAppointments, setScheduledAppointments] = useState<ScheduledAppointment[]>([]);
-  const [loadingScheduledAppointments, setLoadingScheduledAppointments] = useState(false);
-  const [scheduledAppointmentsError, setScheduledAppointmentsError] = useState<string | null>(null);
-  const [scheduledAppointmentsLastDoc, setScheduledAppointmentsLastDoc] = useState<any>(null);
-  const [scheduledAppointmentsHasMore, setScheduledAppointmentsHasMore] = useState(true);
-
   const allTimeSlots = generateTimeSlots();
-  const weeksInMonth = getDaysInMonth(currentMonth.getFullYear(), currentMonth.getMonth());
-
-  const formatScheduledApptDateTime = (appt: ScheduledAppointment): string => {
-    let dateObj: Date | null = null;
-    try {
-      if (appt.selectedDate && typeof appt.selectedDate.toDate === 'function') {
-        dateObj = appt.selectedDate.toDate();
-      } else if (appt.selectedDateString) {
-        // stored as YYYY-MM-DD
-        dateObj = new Date(`${appt.selectedDateString}T00:00:00`);
-      }
-    } catch {
-      dateObj = null;
-    }
-
-    const dateLabel = dateObj
-      ? dateObj.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
-      : (appt.selectedDateString || '');
-
-    const timeLabel = appt.selectedTime || '';
-    return [dateLabel, timeLabel].filter(Boolean).join(' — ');
-  };
-
-  const fetchScheduledAppointments = async (opts?: { reset?: boolean }) => {
-    const reset = opts?.reset ?? false;
-    const PAGE_SIZE = 50;
-
-    setLoadingScheduledAppointments(true);
-    if (reset) {
-      setScheduledAppointmentsError(null);
-      setScheduledAppointmentsLastDoc(null);
-      setScheduledAppointmentsHasMore(true);
-    }
-
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const startOfTodayTs = firestore.Timestamp.fromDate(today);
-
-      let query = firestore()
-        .collection('appointments')
-        .where('status', '==', 'scheduled')
-        .where('selectedDate', '>=', startOfTodayTs)
-        .orderBy('selectedDate', 'asc')
-        .limit(PAGE_SIZE);
-
-      const lastDoc = reset ? null : scheduledAppointmentsLastDoc;
-      if (lastDoc) {
-        query = query.startAfter(lastDoc);
-      }
-
-      let snapshot;
-      try {
-        snapshot = await query.get();
-      } catch (e: any) {
-        // This query may require a composite index (status + selectedDate). If it fails,
-        // fall back to a simpler query and filter status client-side.
-        const msg = String(e?.message || e);
-        console.warn('Scheduled appointments query failed; falling back:', msg);
-
-        let fallback = firestore()
-          .collection('appointments')
-          .where('selectedDate', '>=', startOfTodayTs)
-          .orderBy('selectedDate', 'asc')
-          .limit(PAGE_SIZE);
-
-        const fallbackLastDoc = reset ? null : scheduledAppointmentsLastDoc;
-        if (fallbackLastDoc) {
-          fallback = fallback.startAfter(fallbackLastDoc);
-        }
-        snapshot = await fallback.get();
-      }
-
-      const docs = snapshot.docs || [];
-      const mapped: ScheduledAppointment[] = docs
-        .map((d: any) => ({ id: d.id, ...(d.data?.() ?? {}) }))
-        .filter((a: ScheduledAppointment) => (a.status || '').toLowerCase() === 'scheduled');
-
-      const newLastDoc = docs.length > 0 ? docs[docs.length - 1] : null;
-      setScheduledAppointmentsLastDoc(newLastDoc);
-      setScheduledAppointmentsHasMore(docs.length === PAGE_SIZE);
-
-      setScheduledAppointments(prev => (reset ? mapped : [...prev, ...mapped]));
-      setScheduledAppointmentsError(null);
-    } catch (e: any) {
-      console.error('Failed to load scheduled appointments:', e);
-      setScheduledAppointmentsError(e?.message || 'Failed to load scheduled appointments.');
-      if (reset) setScheduledAppointments([]);
-    } finally {
-      setLoadingScheduledAppointments(false);
-    }
-  };
+  const weeksInMonth = getDaysInMonth(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth(),
+  );
 
   // Check authentication on mount
   useEffect(() => {
@@ -422,7 +328,9 @@ const CalendarBookingScreen: React.FC = () => {
 
       if (token) {
         // Load user ID if authenticated
-        const candidateId = await StorageService.getItem<number>(StorageKeys.candidateId);
+        const candidateId = await StorageService.getItem<number>(
+          StorageKeys.candidateId,
+        );
         if (candidateId) setUserId(candidateId);
       } else {
         // Show login popup if not authenticated
@@ -434,41 +342,42 @@ const CalendarBookingScreen: React.FC = () => {
     checkAuth();
   }, []);
 
-  // Load upcoming scheduled appointments (today+)
-  useEffect(() => {
-    fetchScheduledAppointments({ reset: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Fetch time restrictions from Firestore
   useEffect(() => {
-    const unsubscribe = firestore().collection('appointmenttimeselect').onSnapshot(
-      snapshot => {
-        const restrictions: Record<string, { begin: string; end: string }> = {};
+    const unsubscribe = firestore()
+      .collection('appointmenttimeselect')
+      .onSnapshot(
+        snapshot => {
+          const restrictions: Record<string, {begin: string; end: string}> = {};
 
-        snapshot.docs.forEach(doc => {
-          const data = doc.data();
-          const day = data.day?.toLowerCase()?.trim(); // monday, tuesday, etc.
-          const begin = data.begin?.trim(); // e.g., "9:00 AM"
-          const end = data.end?.trim(); // e.g., "5:00 PM"
+          snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const day = data.day?.toLowerCase()?.trim(); // monday, tuesday, etc.
+            const begin = data.begin?.trim(); // e.g., "9:00 AM"
+            const end = data.end?.trim(); // e.g., "5:00 PM"
 
-          if (__DEV__) {
-            console.log('Processing restriction document:', { day, begin, end, rawDay: data.day });
-          }
+            if (__DEV__) {
+              console.log('Processing restriction document:', {
+                day,
+                begin,
+                end,
+                rawDay: data.day,
+              });
+            }
 
-          if (day && begin && end) {
-            restrictions[day] = { begin, end };
-          }
-        });
+            if (day && begin && end) {
+              restrictions[day] = {begin, end};
+            }
+          });
 
-        setTimeRestrictions(restrictions);
-        setLoadingTimeRestrictions(false);
-      },
-      error => {
-        console.error('Failed to load time restrictions:', error);
-        setLoadingTimeRestrictions(false);
-      },
-    );
+          setTimeRestrictions(restrictions);
+          setLoadingTimeRestrictions(false);
+        },
+        error => {
+          console.error('Failed to load time restrictions:', error);
+          setLoadingTimeRestrictions(false);
+        },
+      );
 
     return () => unsubscribe();
   }, []);
@@ -521,7 +430,10 @@ const CalendarBookingScreen: React.FC = () => {
 
           if (appointmentTime) {
             // Get all 15-minute slots covered by this appointment
-            const coveredSlots = getSlotsCoveredByAppointment(appointmentTime, duration);
+            const coveredSlots = getSlotsCoveredByAppointment(
+              appointmentTime,
+              duration,
+            );
             coveredSlots.forEach(slot => {
               bookedTimes.add(slot);
             });
@@ -549,10 +461,10 @@ const CalendarBookingScreen: React.FC = () => {
   }, [selectedDate]);
 
   // Filter time slots based on selected date, restrictions, and existing appointments
-  const getAvailableTimeSlots = (): { slot: string; isBooked: boolean }[] => {
+  const getAvailableTimeSlots = (): {slot: string; isBooked: boolean}[] => {
     if (!selectedDate) {
       // Show all slots if no date selected (mark none as booked)
-      return allTimeSlots.map(slot => ({ slot, isBooked: false }));
+      return allTimeSlots.map(slot => ({slot, isBooked: false}));
     }
 
     const dayName = getDayName(selectedDate);
@@ -572,7 +484,9 @@ const CalendarBookingScreen: React.FC = () => {
         // Include slots where:
         // 1. Slot starts at or after begin time
         // 2. Appointment ends before or at end time (appointment is 45 minutes)
-        return slotMinutes >= beginMinutes && appointmentEndMinutes <= endMinutes;
+        return (
+          slotMinutes >= beginMinutes && appointmentEndMinutes <= endMinutes
+        );
       });
     }
 
@@ -599,8 +513,13 @@ const CalendarBookingScreen: React.FC = () => {
     } else {
       // Check if any of the slots that would be covered by this appointment are already booked
       const appointmentDuration = 45; // 45-minute appointments
-      const slotsThatWouldBeCovered = getSlotsCoveredByAppointment(selectedTime, appointmentDuration);
-      const conflictingSlots = slotsThatWouldBeCovered.filter(slot => existingAppointments.has(slot));
+      const slotsThatWouldBeCovered = getSlotsCoveredByAppointment(
+        selectedTime,
+        appointmentDuration,
+      );
+      const conflictingSlots = slotsThatWouldBeCovered.filter(slot =>
+        existingAppointments.has(slot),
+      );
 
       if (conflictingSlots.length > 0) {
         newErrors.time =
@@ -615,7 +534,10 @@ const CalendarBookingScreen: React.FC = () => {
 
   const handleFinalizeBooking = async () => {
     if (!validateForm()) {
-      Alert.alert('Validation Error', 'Please fill in all required fields correctly.');
+      Alert.alert(
+        'Validation Error',
+        'Please fill in all required fields correctly.',
+      );
       return;
     }
 
@@ -632,12 +554,33 @@ const CalendarBookingScreen: React.FC = () => {
       appointmentDateTime.setHours(hour24, minutes, 0, 0);
 
       // Create Timestamp using Firestore API
-      const selectedDateTimestamp = firestore.Timestamp.fromDate(appointmentDateTime);
+      const selectedDateTimestamp =
+        firestore.Timestamp.fromDate(appointmentDateTime);
 
       // Get user name and email from storage for the appointment
-      const userName = await StorageService.getItem<string>(StorageKeys.userName);
-      const userEmail = await StorageService.getItem<string>(StorageKeys.userEmail);
-      const userPhone = await StorageService.getItem<string>(StorageKeys.userPhone);
+      const userName = await StorageService.getItem<string>(
+        StorageKeys.userName,
+      );
+      const userEmail = await StorageService.getItem<string>(
+        StorageKeys.userEmail,
+      );
+      const userPhone = await StorageService.getItem<string>(
+        StorageKeys.userPhone,
+      );
+      const appointmentEndDateTime = new Date(
+        appointmentDateTime.getTime() + 45 * 60 * 1000,
+      );
+
+      const office365Event = await createOffice365CalendarEvent({
+        subject: userName ? `Candidate Appointment - ${userName}` : 'Candidate Appointment',
+        notes: notes.trim(),
+        attendeeEmail: userEmail || undefined,
+        attendeeName: userName || undefined,
+        attendeePhone: userPhone || undefined,
+        locationDisplayName: 'Candidate Conference Room',
+        startIso: appointmentDateTime.toISOString(),
+        endIso: appointmentEndDateTime.toISOString(),
+      });
 
       // Create appointment data
       const appointmentData: any = {
@@ -654,15 +597,16 @@ const CalendarBookingScreen: React.FC = () => {
         selectedTime: selectedTime!,
         timeZone: 'Eastern Time - US & Canada',
         notes: notes.trim(),
+        office365EventId: office365Event?.id || null,
+        office365EventLink: office365Event?.webLink || null,
         createdAt: firestore.FieldValue.serverTimestamp(),
         status: 'scheduled',
       };
 
       // Save to Firebase Firestore
-      const docRef = await firestore().collection('appointments').add(appointmentData);
-
-      // Refresh upcoming scheduled list so the new booking appears.
-      fetchScheduledAppointments({ reset: true });
+      const docRef = await firestore()
+        .collection('appointments')
+        .add(appointmentData);
 
       // Add the booked time to existing appointments to immediately reflect in UI
       setExistingAppointments(prev => new Set([...prev, selectedTime!]));
@@ -695,15 +639,21 @@ const CalendarBookingScreen: React.FC = () => {
           'Saturday',
         ];
         const appointmentDate = new Date(selectedDate!);
-        const formattedDate = `${dayNames[appointmentDate.getDay()]}, ${monthNames[appointmentDate.getMonth()]} ${appointmentDate.getDate()}, ${appointmentDate.getFullYear()}`;
+        const formattedDate = `${dayNames[appointmentDate.getDay()]}, ${
+          monthNames[appointmentDate.getMonth()]
+        } ${appointmentDate.getDate()}, ${appointmentDate.getFullYear()}`;
         const formattedTime = selectedTime!;
 
-        Alert.alert('Success', `Your appointment has been scheduled:\n\n${formattedDate}\n${formattedTime}`, [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]);
+        Alert.alert(
+          'Success',
+          `Your appointment has been scheduled:\n\n${formattedDate}\n${formattedTime}`,
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ],
+        );
       } else {
         throw new Error('Document was not created in Firestore');
       }
@@ -711,8 +661,10 @@ const CalendarBookingScreen: React.FC = () => {
       console.error('Error saving appointment:', error);
       Alert.alert(
         'Error',
-        `Failed to schedule appointment: ${error?.message || 'Unknown error'}. Please try again.`,
-        [{ text: 'OK' }],
+        `Failed to schedule appointment: ${
+          error?.message || 'Unknown error'
+        }. Please try again.`,
+        [{text: 'OK'}],
       );
     } finally {
       setIsLoading(false);
@@ -724,28 +676,39 @@ const CalendarBookingScreen: React.FC = () => {
       return; // Don't allow selecting past dates
     }
     // Normalize selected date to midnight to ensure consistent day calculation
-    const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const normalizedDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
     normalizedDate.setHours(0, 0, 0, 0);
     setSelectedDate(normalizedDate);
     setSelectedTime(null); // Clear time when date changes (available slots may differ)
-    setErrors(prev => ({ ...prev, date: undefined, time: undefined }));
+    setErrors(prev => ({...prev, date: undefined, time: undefined}));
   };
 
   const handleTimeSelect = (time: string) => {
     // Check if any of the slots that would be covered by this appointment are already booked
     const appointmentDuration = 45; // 45-minute appointments
-    const slotsThatWouldBeCovered = getSlotsCoveredByAppointment(time, appointmentDuration);
-    const conflictingSlots = slotsThatWouldBeCovered.filter(slot => existingAppointments.has(slot));
+    const slotsThatWouldBeCovered = getSlotsCoveredByAppointment(
+      time,
+      appointmentDuration,
+    );
+    const conflictingSlots = slotsThatWouldBeCovered.filter(slot =>
+      existingAppointments.has(slot),
+    );
 
     if (conflictingSlots.length > 0) {
       Alert.alert(
         'Time Unavailable',
-        `This time slot conflicts with an existing appointment. The following slots are already booked: ${conflictingSlots.join(', ')}. Please select another time.`,
+        `This time slot conflicts with an existing appointment. The following slots are already booked: ${conflictingSlots.join(
+          ', ',
+        )}. Please select another time.`,
       );
       return;
     }
     setSelectedTime(time);
-    setErrors(prev => ({ ...prev, time: undefined }));
+    setErrors(prev => ({...prev, time: undefined}));
   };
 
   const handlePreviousMonth = () => {
@@ -797,16 +760,16 @@ const CalendarBookingScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.monthNavButton}
             onPress={handlePreviousMonth}
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             <Text style={styles.monthNavButtonText}>‹</Text>
           </TouchableOpacity>
-          <Text style={styles.monthYearText}>{getMonthYearString(currentMonth)}</Text>
+          <Text style={styles.monthYearText}>
+            {getMonthYearString(currentMonth)}
+          </Text>
           <TouchableOpacity
             style={styles.monthNavButton}
             onPress={handleNextMonth}
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             <Text style={styles.monthNavButtonText}>›</Text>
           </TouchableOpacity>
         </View>
@@ -828,7 +791,8 @@ const CalendarBookingScreen: React.FC = () => {
                   day.getMonth() === selectedDate.getMonth() &&
                   day.getFullYear() === selectedDate.getFullYear();
                 const isCurrentMonth =
-                  day.getMonth() === currentMonthValue && day.getFullYear() === currentYearValue;
+                  day.getMonth() === currentMonthValue &&
+                  day.getFullYear() === currentYearValue;
                 const isTodayDate = isToday(day);
 
                 return (
@@ -842,17 +806,17 @@ const CalendarBookingScreen: React.FC = () => {
                     ]}
                     onPress={() => handleDateSelect(day)}
                     disabled={isPast}
-                    activeOpacity={0.7}
-                  >
+                    activeOpacity={0.7}>
                     <Text
                       style={[
                         styles.calendarDayText,
                         !isCurrentMonth && styles.calendarDayTextOtherMonth,
                         isSelected && styles.calendarDayTextSelected,
                         isPast && styles.calendarDayTextPast,
-                        isTodayDate && !isSelected && styles.calendarDayTextToday,
-                      ]}
-                    >
+                        isTodayDate &&
+                          !isSelected &&
+                          styles.calendarDayTextToday,
+                      ]}>
                       {day.getDate()}
                     </Text>
                   </TouchableOpacity>
@@ -871,7 +835,11 @@ const CalendarBookingScreen: React.FC = () => {
       return (
         <View style={styles.timeSlotsContainer}>
           <Text style={styles.sectionTitle}>Select a Time</Text>
-          <ActivityIndicator size="small" color={Colors.light.primary} style={{ marginVertical: 20 }} />
+          <ActivityIndicator
+            size="small"
+            color={Colors.light.primary}
+            style={{marginVertical: 20}}
+          />
           <Text style={styles.loadingText}>Loading available times...</Text>
         </View>
       );
@@ -881,7 +849,9 @@ const CalendarBookingScreen: React.FC = () => {
       return (
         <View style={styles.timeSlotsContainer}>
           <Text style={styles.sectionTitle}>Select a Time</Text>
-          <Text style={styles.infoText}>Please select a date first to see available times</Text>
+          <Text style={styles.infoText}>
+            Please select a date first to see available times
+          </Text>
         </View>
       );
     }
@@ -891,7 +861,8 @@ const CalendarBookingScreen: React.FC = () => {
         <View style={styles.timeSlotsContainer}>
           <Text style={styles.sectionTitle}>Select a Time</Text>
           <Text style={styles.infoText}>
-            No available times for {getDayName(selectedDate)}. Please select a different date.
+            No available times for {getDayName(selectedDate)}. Please select a
+            different date.
           </Text>
         </View>
       );
@@ -901,7 +872,7 @@ const CalendarBookingScreen: React.FC = () => {
       <View style={styles.timeSlotsContainer}>
         <Text style={styles.sectionTitle}>Select a Time</Text>
         <View style={styles.timeSlotsGrid}>
-          {timeSlotsWithStatus.map(({ slot, isBooked }, index) => (
+          {timeSlotsWithStatus.map(({slot, isBooked}, index) => (
             <TouchableOpacity
               key={index}
               style={[
@@ -911,15 +882,13 @@ const CalendarBookingScreen: React.FC = () => {
               ]}
               onPress={() => !isBooked && handleTimeSelect(slot)}
               disabled={isBooked}
-              activeOpacity={0.7}
-            >
+              activeOpacity={0.7}>
               <Text
                 style={[
                   styles.timeSlotText,
                   selectedTime === slot && styles.timeSlotTextSelected,
                   isBooked && styles.timeSlotTextBooked,
-                ]}
-              >
+                ]}>
                 {slot}
               </Text>
             </TouchableOpacity>
@@ -964,23 +933,38 @@ const CalendarBookingScreen: React.FC = () => {
             if (data.token) {
               // Store the actual token from API response
               await StorageService.saveItem(StorageKeys.authToken, data.token);
-              await StorageService.saveItem(StorageKeys.candidateId, data.user?.id);
+              await StorageService.saveItem(
+                StorageKeys.candidateId,
+                data.user?.id,
+              );
               // Store user name and email
               if (data.user?.name) {
-                await StorageService.saveItem(StorageKeys.userName, data.user.name);
+                await StorageService.saveItem(
+                  StorageKeys.userName,
+                  data.user.name,
+                );
               }
               if (data.user?.email) {
-                await StorageService.saveItem(StorageKeys.userEmail, data.user.email);
+                await StorageService.saveItem(
+                  StorageKeys.userEmail,
+                  data.user.email,
+                );
               }
               await StorageService.saveItem(
                 StorageKeys.userPhone,
                 String(
-                  data.user?.phone || data.user?.phoneNumber || data.user?.mobile || '',
+                  data.user?.phone ||
+                    data.user?.phoneNumber ||
+                    data.user?.mobile ||
+                    '',
                 ),
               );
               // Store user ID
               if (data.user?.id) {
-                await StorageService.saveItem(StorageKeys.candidateId, data.user.id);
+                await StorageService.saveItem(
+                  StorageKeys.candidateId,
+                  data.user.id,
+                );
                 setUserId(data.user.id);
               }
               setAuthToken(data.token);
@@ -998,15 +982,20 @@ const CalendarBookingScreen: React.FC = () => {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         {/* Appointment Details */}
         <View style={styles.appointmentDetailsContainer}>
-          <Text style={styles.appointmentTitle}>James McMahon</Text>
-          <Text style={styles.appointmentSubtitle}>Candidate Pre-Qualifying / Qualifying</Text>
+          <Text style={styles.appointmentTitle}>Courtney Sweat</Text>
+          <Text style={styles.appointmentSubtitle}>
+            Candidate Pre-Qualifying / Qualifying
+          </Text>
           <Text style={styles.appointmentDetail}>45 min</Text>
-          <Text style={styles.appointmentDetail}>Candidate Conference Room</Text>
-          <Text style={styles.appointmentDetail}>96135 Nassau Place, Suite 3</Text>
+          <Text style={styles.appointmentDetail}>
+            Candidate Conference Room
+          </Text>
+          <Text style={styles.appointmentDetail}>
+            96135 Nassau Place, Suite 3
+          </Text>
           <Text style={styles.appointmentDetail}>Yulee, FL 32097</Text>
         </View>
 
@@ -1041,55 +1030,19 @@ const CalendarBookingScreen: React.FC = () => {
 
         {/* Finalize Booking Button */}
         <TouchableOpacity
-          style={[styles.finalizeButton, isLoading && styles.finalizeButtonDisabled]}
+          style={[
+            styles.finalizeButton,
+            isLoading && styles.finalizeButtonDisabled,
+          ]}
           onPress={handleFinalizeBooking}
           disabled={isLoading}
-          activeOpacity={0.7}
-        >
-          {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.finalizeButtonText}>Finalize Booking</Text>}
-        </TouchableOpacity>
-
-        {/* Scheduled Appointments (Upcoming) */}
-        <View style={[styles.section, styles.scheduledAppointmentsSection]}>
-          <Text style={styles.sectionTitle}>Scheduled Appointments (Upcoming)</Text>
-
-          {loadingScheduledAppointments ? (
-            <View style={{ paddingVertical: 12 }}>
-              <ActivityIndicator color={Colors.light.primary} />
-              <Text style={styles.loadingText}>Loading scheduled appointments...</Text>
-            </View>
-          ) : scheduledAppointmentsError ? (
-            <Text style={styles.errorText}>{scheduledAppointmentsError}</Text>
-          ) : scheduledAppointments.length === 0 ? (
-            <Text style={styles.helperText}>No upcoming scheduled appointments found.</Text>
+          activeOpacity={0.7}>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
           ) : (
-            <View style={styles.scheduledList}>
-              {scheduledAppointments.map(appt => (
-                <View key={appt.id} style={styles.scheduledItem}>
-                  <Text style={styles.scheduledName}>{appt.name || '—'}</Text>
-                  <Text style={styles.scheduledMeta}>{formatScheduledApptDateTime(appt) || '—'}</Text>
-                  <Text style={styles.scheduledMeta}>Email: {appt.email || '—'}</Text>
-                  <Text style={styles.scheduledMeta}>Phone: {appt.phone || '—'}</Text>
-                  {!!appt.notes && (
-                    <Text style={styles.scheduledNotes} numberOfLines={3}>
-                      Notes: {appt.notes}
-                    </Text>
-                  )}
-                </View>
-              ))}
-
-              {scheduledAppointmentsHasMore && (
-                <TouchableOpacity
-                  style={styles.loadMoreButton}
-                  onPress={() => fetchScheduledAppointments({ reset: false })}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.loadMoreButtonText}>Load more</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            <Text style={styles.finalizeButtonText}>Finalize Booking</Text>
           )}
-        </View>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -1115,56 +1068,6 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
     marginTop: 12,
     textAlign: 'center',
-  },
-  helperText: {
-    fontSize: 14,
-    fontFamily: 'MyriadPro-Regular',
-    color: Colors.light.text,
-    opacity: 0.8,
-    marginTop: 6,
-  },
-  scheduledList: {
-    marginTop: 12,
-    gap: 10,
-  },
-  scheduledItem: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: `${Colors.light.primary}30`,
-    borderRadius: 8,
-    padding: 12,
-  },
-  scheduledName: {
-    fontSize: 16,
-    fontFamily: 'MyriadPro-Bold',
-    color: Colors.light.primary,
-    marginBottom: 6,
-  },
-  scheduledMeta: {
-    fontSize: 13,
-    fontFamily: 'MyriadPro-Regular',
-    color: Colors.light.text,
-    marginBottom: 2,
-  },
-  scheduledNotes: {
-    marginTop: 6,
-    fontSize: 13,
-    fontFamily: 'MyriadPro-Regular',
-    color: Colors.light.text,
-    opacity: 0.9,
-  },
-  loadMoreButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.light.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  loadMoreButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontFamily: 'MyriadPro-Bold',
   },
   appointmentDetailsContainer: {
     backgroundColor: Colors.light.primary + '10',
@@ -1343,9 +1246,6 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
-  scheduledAppointmentsSection: {
-    marginTop: 16,
-  },
   sectionTitle: {
     fontSize: 16,
     fontFamily: 'MyriadPro-Bold',
@@ -1391,5 +1291,3 @@ const styles = StyleSheet.create({
 });
 
 export default CalendarBookingScreen;
-
-
