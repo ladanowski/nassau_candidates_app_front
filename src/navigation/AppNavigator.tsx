@@ -1,8 +1,9 @@
-import React from 'react';
+import React, {useCallback, useRef} from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { navigationRef } from '../services/NavigationService';
 // import { createStackNavigator } from '@react-navigation/stack';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {ActivityLoggingService} from '../services/api_services/ActivityLoggingService';
 import DashboardScreen from '../screens/Dashboard/DashboardScreen';
 import PetitionQueueScreen from '../screens/petitionQueue/PetitionQueueScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
@@ -23,28 +24,52 @@ import CalendarBookingScreen from '../screens/calendarBooking/CalendarBookingScr
 
 const Stack = createNativeStackNavigator();
 
-const AppNavigator = () => (
-  <NavigationContainer ref={navigationRef}>
-    <Stack.Navigator initialRouteName="Dashboard" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Dashboard" component={DashboardScreen} />
-      <Stack.Screen name="webView" component={WebViewScreen} />
-      <Stack.Screen name="notifications" component={NotificationsScreen} />
-      <Stack.Screen name="notificationDetails" component={NotificationDetailsScreen} />
-      <Stack.Screen name="petitionQueue" component={PetitionQueueScreen} />
-      <Stack.Screen name="settings" component={SettingsScreen} />
-      <Stack.Screen name="candidateFinanceReport" component={CandidateFinanceReport} />
-      <Stack.Screen name="committeeFinanceReport" component={CommitteeFinanceReport} />
-      <Stack.Screen name="importantElectionDates" component={ImportantElectionDates} />
-      <Stack.Screen name="petitionDueDateCounty" component={PetitionDueDateCounty} />
-      <Stack.Screen name="petitionDueDateJudicial" component={PetitionDueDateJudicial} />
-      <Stack.Screen name="privacyPolicy" component={PrivacyPolicyScreen} />
-      <Stack.Screen name="termsConditions" component={TermsConditionsScreen} />
-      <Stack.Screen name="contactUs" component={ContactUsScreen} />
-      <Stack.Screen name="floridaVoters" component={FloridaVotersScreen} />
-      <Stack.Screen name="pollingLocations" component={PollingLocationsScreen} />
-      <Stack.Screen name="calendarBooking" component={CalendarBookingScreen} />
-    </Stack.Navigator>
-  </NavigationContainer>
-);
+const AppNavigator = () => {
+  const lastTrackedRouteKeyRef = useRef<string>();
+
+  const trackCurrentScreen = useCallback(async () => {
+    const currentRoute = navigationRef.getCurrentRoute();
+    const currentRouteName = currentRoute?.name;
+    const currentRouteKey = currentRoute?.key ?? currentRouteName;
+
+    if (!currentRouteName || !currentRouteKey || lastTrackedRouteKeyRef.current === currentRouteKey) {
+      return;
+    }
+
+    lastTrackedRouteKeyRef.current = currentRouteKey;
+    await ActivityLoggingService.logScreenView(currentRouteName);
+  }, []);
+
+  return (
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        void trackCurrentScreen();
+      }}
+      onStateChange={() => {
+        void trackCurrentScreen();
+      }}>
+      <Stack.Navigator initialRouteName="Dashboard" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        <Stack.Screen name="webView" component={WebViewScreen} />
+        <Stack.Screen name="notifications" component={NotificationsScreen} />
+        <Stack.Screen name="notificationDetails" component={NotificationDetailsScreen} />
+        <Stack.Screen name="petitionQueue" component={PetitionQueueScreen} />
+        <Stack.Screen name="settings" component={SettingsScreen} />
+        <Stack.Screen name="candidateFinanceReport" component={CandidateFinanceReport} />
+        <Stack.Screen name="committeeFinanceReport" component={CommitteeFinanceReport} />
+        <Stack.Screen name="importantElectionDates" component={ImportantElectionDates} />
+        <Stack.Screen name="petitionDueDateCounty" component={PetitionDueDateCounty} />
+        <Stack.Screen name="petitionDueDateJudicial" component={PetitionDueDateJudicial} />
+        <Stack.Screen name="privacyPolicy" component={PrivacyPolicyScreen} />
+        <Stack.Screen name="termsConditions" component={TermsConditionsScreen} />
+        <Stack.Screen name="contactUs" component={ContactUsScreen} />
+        <Stack.Screen name="floridaVoters" component={FloridaVotersScreen} />
+        <Stack.Screen name="pollingLocations" component={PollingLocationsScreen} />
+        <Stack.Screen name="calendarBooking" component={CalendarBookingScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
 
 export default AppNavigator;

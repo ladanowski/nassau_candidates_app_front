@@ -572,7 +572,9 @@ const CalendarBookingScreen: React.FC = () => {
       );
 
       const office365Event = await createOffice365CalendarEvent({
-        subject: userName ? `Candidate Appointment - ${userName}` : 'Candidate Appointment',
+        subject: userName
+          ? `Candidate Appointment - ${userName}`
+          : 'Candidate Appointment',
         notes: notes.trim(),
         attendeeEmail: userEmail || undefined,
         attendeeName: userName || undefined,

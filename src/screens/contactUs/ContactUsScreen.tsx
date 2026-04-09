@@ -91,7 +91,7 @@ const ContactUsScreen: React.FC = () => {
 
     setSubmitting(true);
     try {
-      const emailRecipient = 'mfranzese@votenassaufl.gov'; // TODO: change if you want a different recipient
+      const emailRecipient = 'candidates@votenassaufl.gov'; // TODO: change if you want a different recipient
       const emailSubject = trimmedSubject
         ? `Contact Us - ${trimmedSubject}`
         : 'Contact Us';

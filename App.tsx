@@ -1,17 +1,23 @@
 import React, { useCallback, useEffect } from 'react';
 import {
+  AppState,
+  AppStateStatus,
   Platform,
   PermissionsAndroid,
 } from 'react-native';
 import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 import AppNavigator from './src/navigation/AppNavigator';
 import NotificationService from './src/services/NotificationService';
+import {ActivityLoggingService} from './src/services/api_services/ActivityLoggingService';
+import {navigationRef} from './src/services/NavigationService';
 import firestore from '@react-native-firebase/firestore';
 import DeviceInfo from 'react-native-device-info';
 import StorageService from './src/services/StorageService';
 import { StorageKeys } from './src/constants/storage_keys';
 
 const App = () => {
+  const appStateRef = React.useRef(AppState.currentState);
+
   const requestUserPermission = useCallback(async () => {
     if (Platform.OS === 'ios') {
       const authStatus = await messaging().requestPermission();
@@ -153,8 +159,32 @@ const App = () => {
     });
   }, [saveTokenToFirestore]);
 
+  const logCurrentScreenView = useCallback(async () => {
+    if (!navigationRef.isReady()) {
+      return;
+    }
+
+    const currentRouteName = navigationRef.getCurrentRoute()?.name;
+    if (!currentRouteName) {
+      return;
+    }
+
+    await ActivityLoggingService.logScreenView(currentRouteName);
+  }, []);
+
+  const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
+    const wasInBackground = /inactive|background/.test(appStateRef.current);
+    if (wasInBackground && nextAppState === 'active') {
+      void ActivityLoggingService.logAppOpened();
+      void logCurrentScreenView();
+    }
+
+    appStateRef.current = nextAppState;
+  }, [logCurrentScreenView]);
+
   useEffect(() => {
     let unsubscribeForeground: undefined | (() => void);
+    const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
 
     const initializeApp = async () => {
       await requestUserPermission();
@@ -162,14 +192,17 @@ const App = () => {
       await handleBackgroundNotification();
       unsubscribeForeground = setupForegroundListener();
       setupTokenRefreshListener();
+      await ActivityLoggingService.logAppOpened();
     };
 
     initializeApp();
 
     return () => {
       if (unsubscribeForeground) unsubscribeForeground();
+      appStateSubscription.remove();
     };
   }, [
+    handleAppStateChange,
     requestUserPermission,
     getFCMToken,
     handleBackgroundNotification,

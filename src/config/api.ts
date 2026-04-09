@@ -33,6 +33,7 @@ export const RequestConfig = {
 // Keep leading slashes.
 export const Endpoints = {
   loginCandidate: '/api/auth/LoginCandidate',
+  activityLog: '/api/activity/log',
   petitionQueue: '/api/selectPetitionQueue',
   settings: '/api/settings',
   notifications: '/api/notifications',
